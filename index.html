@@ -25,7 +25,11 @@
     <img class="brand-title t-cream" src="titre-cream.png?v=1" alt="BulletRide" />
   </h1>
   <div class="topbar-actions">
-    <button id="btn-theme" class="icon-btn" title="Thème clair / sombre">🌙</button>
+    <button id="btn-theme" class="theme-switch" role="switch" aria-label="Thème clair ou sombre">
+      <span class="ts-ico ts-sun" aria-hidden="true">☀️</span>
+      <span class="ts-ico ts-moon" aria-hidden="true">🌙</span>
+      <span class="ts-thumb" aria-hidden="true"></span>
+    </button>
     <button id="btn-sync" class="icon-btn" title="Synchronisation">☁️</button>
     <button id="btn-settings" class="icon-btn" title="Catégories">🎨</button>
   </div>

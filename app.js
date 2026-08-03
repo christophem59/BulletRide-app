@@ -1402,9 +1402,8 @@ function applyTheme() {
   else root.removeAttribute("data-theme");
 
   const dark = themeIsDark();
-  // Le bouton montre l'action à venir (bascule vers l'autre thème).
-  el.themeBtn.textContent = dark ? "☀️" : "🌙";
-  el.themeBtn.title = dark ? "Passer en clair" : "Passer en sombre";
+  // Le pouce (CSS) indique l'état ; on tient à jour l'accessibilité.
+  el.themeBtn.setAttribute("aria-checked", dark ? "true" : "false");
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", dark ? "#17110F" : "#F1E7CC");
 }
