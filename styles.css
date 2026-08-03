@@ -84,6 +84,20 @@ body {
 .nav-btn:active { transform: scale(0.94); }
 .year-label { font-size: 1.6rem; font-weight: 700; min-width: 4ch; text-align: center; }
 
+/* Hero (illustration moto, vue annuelle) */
+.hero { display: flex; justify-content: center; padding: 12px 16px 2px; }
+.hero-moto { width: min(100%, 320px); height: auto; opacity: 0.5; }
+
+/* État vide (vue mensuelle) */
+.mv-empty-state { text-align: center; padding: 20px 0 8px; }
+.mv-empty-moto {
+  width: min(78%, 280px);
+  height: auto;
+  opacity: 0.4;
+  display: block;
+  margin: 0 auto 10px;
+}
+
 /* Bouton "aujourd'hui" */
 .today-cta { display: flex; justify-content: center; padding: 6px 16px 2px; }
 .btn-today {

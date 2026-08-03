@@ -753,10 +753,17 @@ function renderMonthView() {
   const lf = document.createDocumentFragment();
   const visible = entries.filter(([, e]) => e.cat || e.note || e.km > 0 || e.min > 0);
   if (visible.length === 0) {
+    const wrap = document.createElement("div");
+    wrap.className = "mv-empty-state";
+    const img = document.createElement("img");
+    img.src = "moto.png?v=1";
+    img.alt = "";
+    img.className = "mv-empty-moto";
     const empty = document.createElement("p");
     empty.className = "mv-empty";
     empty.textContent = "Aucune sortie ce mois-ci.";
-    lf.appendChild(empty);
+    wrap.append(img, empty);
+    lf.appendChild(wrap);
   }
   for (const [key, e] of visible) {
     const d = Number(key.slice(8, 10));
