@@ -223,15 +223,16 @@ body {
 }
 .day.filled .num { color: rgba(0, 0, 0, 0.6); }
 
-/* Indicateur "note" : petit point en haut à droite */
+/* Indicateur "note" : barre blanche en bas de la case (la couleur de la
+   catégorie reste visible en fond). */
 .day.has-note::after {
   content: "";
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
+  left: 18%;
+  right: 18%;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 2px;
   background: #fff;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
   pointer-events: none;
