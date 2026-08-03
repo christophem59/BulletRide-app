@@ -102,13 +102,11 @@ body {
   top: 96px;
   width: min(150vw, 1200px);
   height: auto;
-  opacity: 0.07; /* crème sur fond sombre : discret suffit */
+  opacity: 0.20;
   z-index: -1;
   pointer-events: none;
   transform: translateX(-50%);
 }
-/* bordeaux sur crème : besoin de plus d'opacité pour se lire */
-.page-bg.t-ink { opacity: 0.14; }
 .topbar-actions { display: flex; gap: 8px; }
 
 .icon-btn {
