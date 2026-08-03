@@ -275,6 +275,37 @@ body {
   padding: 4px 6px;
 }
 
+/* Choix de catégorie pour un jour */
+.day-choices { display: flex; flex-direction: column; gap: 10px; }
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 14px;
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.choice:active { transform: scale(0.98); }
+.choice.selected { border-color: var(--text); }
+.choice .swatch { width: 22px; height: 22px; border-radius: 6px; flex: none; }
+.choice .choice-label { flex: 1; }
+.choice .check { color: var(--text); font-weight: 700; opacity: 0; }
+.choice.selected .check { opacity: 1; }
+.choice-clear {
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--text-dim);
+}
+.choice-clear .swatch {
+  background: repeating-linear-gradient(45deg, #3a3a3a, #3a3a3a 4px, #2a2a2a 4px, #2a2a2a 8px);
+}
+
 .btn-secondary, .btn-primary, .btn-ghost {
   border-radius: 10px;
   padding: 11px 16px;

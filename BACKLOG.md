@@ -10,7 +10,6 @@ Rien actuellement.
 
 ### 1. Interaction & fonctionnalités
 
-- **Choix de catégorie via modale** : au clic sur une date, ouvrir une modale pour choisir l'une des catégories possibles (remplace le fonctionnement actuel « tap pour changer » qui cycle les couleurs).
 - **Veille fonctionnelle bullet journal** : rechercher les fonctionnalités proposées par les apps de bullet journal en général, pour décider ce qu'on veut intégrer à BulletRide.
 
 ### 2. Design
@@ -30,4 +29,5 @@ Rien pour l'instant.
 
 ## Fait récemment
 
+- Choix de catégorie via modale : un clic sur une date ouvre une modale (titre = date en toutes lettres) listant les catégories colorées + « Aucune (pas de moto) ». La catégorie courante y est pré-sélectionnée ; choisir une option applique et ferme. Remplace l'ancien « tap pour changer » qui cyclait les couleurs. Fermeture par ✕, clic extérieur ou Échap ; jours futurs toujours non modifiables.
 - v1 : bullet journal moto en PWA vanilla JS. Vue grille annuelle (12 mois d'un coup, une pastille par jour, semaine lundi→dimanche), coloriage par type de sortie (Balade / Trajet / Circuit / Off-road), tap qui cycle les couleurs, éditeur de catégories (nom + couleur, ajout/suppression), stats de l'année (total + par catégorie), navigation d'année, jours futurs non modifiables, aujourd'hui mis en évidence, installable + offline. Données stockées localement (localStorage).

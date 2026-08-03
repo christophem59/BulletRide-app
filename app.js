@@ -110,6 +110,9 @@ const el = {
   addCat: document.getElementById("btn-add-cat"),
   saveCats: document.getElementById("btn-save-cats"),
   resetCats: document.getElementById("btn-reset-cats"),
+  dayOverlay: document.getElementById("day-overlay"),
+  closeDay: document.getElementById("btn-close-day"),
+  dayChoices: document.getElementById("day-choices"),
 };
 
 /* --------------------------- Rendu --------------------------- */
@@ -240,32 +243,87 @@ function renderLegend() {
 
 /* --------------------------- Interaction jour --------------------------- */
 
-// Cycle : rien -> cat0 -> cat1 -> ... -> dernière -> rien
-function cycleDay(key) {
-  const current = state.days[key];
-  const ids = state.categories.map((c) => c.id);
-  if (ids.length === 0) return;
+const WEEKDAYS_LONG = [
+  "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche",
+];
 
-  let nextId;
-  if (!current) {
-    nextId = ids[0];
-  } else {
-    const idx = ids.indexOf(current);
-    if (idx === -1 || idx === ids.length - 1) {
-      nextId = null; // retour à vide
-    } else {
-      nextId = ids[idx + 1];
-    }
+let selectedDayKey = null;
+
+function formatDayTitle(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  const wd = weekdayMondayFirst(y, m - 1, d);
+  return `${WEEKDAYS_LONG[wd]} ${d} ${MONTHS[m - 1]} ${y}`;
+}
+
+function openDayModal(key) {
+  selectedDayKey = key;
+  document.getElementById("day-modal-title").textContent = formatDayTitle(key);
+  renderDayChoices(key);
+  el.dayOverlay.classList.remove("hidden");
+}
+
+function closeDayModal() {
+  el.dayOverlay.classList.add("hidden");
+  selectedDayKey = null;
+}
+
+function renderDayChoices(key) {
+  const current = state.days[key] || null;
+  const frag = document.createDocumentFragment();
+
+  for (const cat of state.categories) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "choice" + (cat.id === current ? " selected" : "");
+    btn.dataset.cat = cat.id;
+
+    const sw = document.createElement("span");
+    sw.className = "swatch";
+    sw.style.background = cat.color;
+
+    const label = document.createElement("span");
+    label.className = "choice-label";
+    label.textContent = cat.label;
+
+    const check = document.createElement("span");
+    check.className = "check";
+    check.textContent = "✓";
+
+    btn.append(sw, label, check);
+    frag.appendChild(btn);
   }
 
-  if (nextId) {
-    state.days[key] = nextId;
+  // Option "aucune / effacer"
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.className = "choice choice-clear" + (current === null ? " selected" : "");
+  clear.dataset.cat = "";
+  const csw = document.createElement("span");
+  csw.className = "swatch";
+  const clabel = document.createElement("span");
+  clabel.className = "choice-label";
+  clabel.textContent = "Aucune (pas de moto)";
+  const ccheck = document.createElement("span");
+  ccheck.className = "check";
+  ccheck.textContent = "✓";
+  clear.append(csw, clabel, ccheck);
+  frag.appendChild(clear);
+
+  el.dayChoices.replaceChildren(frag);
+}
+
+function chooseCategory(catId) {
+  if (!selectedDayKey) return;
+  const key = selectedDayKey;
+  if (catId) {
+    state.days[key] = catId;
   } else {
     delete state.days[key];
   }
   saveDays();
   updateDayCell(key);
   renderStats();
+  closeDayModal();
 }
 
 function updateDayCell(key) {
@@ -288,7 +346,25 @@ function updateDayCell(key) {
 el.grid.addEventListener("click", (e) => {
   const btn = e.target.closest(".day");
   if (!btn || btn.classList.contains("blank") || btn.classList.contains("future")) return;
-  cycleDay(btn.dataset.key);
+  openDayModal(btn.dataset.key);
+});
+
+el.dayChoices.addEventListener("click", (e) => {
+  const choice = e.target.closest(".choice");
+  if (!choice) return;
+  chooseCategory(choice.dataset.cat || null);
+});
+
+el.closeDay.addEventListener("click", closeDayModal);
+el.dayOverlay.addEventListener("click", (e) => {
+  if (e.target === el.dayOverlay) closeDayModal();
+});
+
+// Échap ferme la modale ouverte.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!el.dayOverlay.classList.contains("hidden")) closeDayModal();
+  else if (!el.overlay.classList.contains("hidden")) closeSettings();
 });
 
 /* --------------------------- Navigation année --------------------------- */

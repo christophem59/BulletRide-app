@@ -36,8 +36,20 @@
 <section id="legend" class="legend"></section>
 
 <footer class="app-footer">
-  <span>Tape un jour pour changer sa couleur • données stockées sur ton appareil</span>
+  <span>Touche un jour pour choisir une catégorie • données stockées sur ton appareil</span>
 </footer>
+
+<!-- Modale de choix de catégorie pour un jour -->
+<div id="day-overlay" class="overlay hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="day-modal-title">Jour</h2>
+      <button id="btn-close-day" class="icon-btn" title="Fermer">✕</button>
+    </div>
+    <p class="hint">Choisis le type de sortie pour ce jour.</p>
+    <div id="day-choices" class="day-choices"></div>
+  </div>
+</div>
 
 <!-- Modale de gestion des catégories -->
 <div id="settings-overlay" class="overlay hidden">
@@ -46,7 +58,7 @@
       <h2>Catégories</h2>
       <button id="btn-close-settings" class="icon-btn" title="Fermer">✕</button>
     </div>
-    <p class="hint">Chaque tap sur un jour passe à la catégorie suivante. Personnalise nom et couleur.</p>
+    <p class="hint">Personnalise le nom et la couleur de chaque catégorie.</p>
     <div id="cat-editor" class="cat-editor"></div>
     <button id="btn-add-cat" class="btn-secondary">+ Ajouter une catégorie</button>
     <div class="modal-actions">
