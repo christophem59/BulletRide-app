@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#141414" />
+<title>BulletRide</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<header class="topbar">
+  <h1>🏍️ BulletRide</h1>
+  <div class="topbar-actions">
+    <button id="btn-settings" class="icon-btn" title="Catégories">🎨</button>
+  </div>
+</header>
+
+<nav class="yearbar">
+  <button id="btn-prev-year" class="nav-btn" title="Année précédente">‹</button>
+  <span id="year-label" class="year-label">2026</span>
+  <button id="btn-next-year" class="nav-btn" title="Année suivante">›</button>
+</nav>
+
+<section id="stats" class="stats"></section>
+
+<main id="year-grid" class="year-grid"></main>
+
+<section id="legend" class="legend"></section>
+
+<footer class="app-footer">
+  <span>Tape un jour pour changer sa couleur • données stockées sur ton appareil</span>
+</footer>
+
+<!-- Modale de gestion des catégories -->
+<div id="settings-overlay" class="overlay hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Catégories</h2>
+      <button id="btn-close-settings" class="icon-btn" title="Fermer">✕</button>
+    </div>
+    <p class="hint">Chaque tap sur un jour passe à la catégorie suivante. Personnalise nom et couleur.</p>
+    <div id="cat-editor" class="cat-editor"></div>
+    <button id="btn-add-cat" class="btn-secondary">+ Ajouter une catégorie</button>
+    <div class="modal-actions">
+      <button id="btn-reset-cats" class="btn-ghost">Réinitialiser</button>
+      <button id="btn-save-cats" class="btn-primary">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
