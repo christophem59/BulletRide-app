@@ -50,19 +50,20 @@
 
   /* top bar */
   .topbar{display:flex; align-items:center; justify-content:space-between; gap:12px; max-width:var(--maxw); margin:0 auto; padding:18px 0 8px;}
-  .topbar .badge{height:34px; width:auto; display:block;}
+  .topbar .badge{height:34px; width:auto;}
   .tgl{border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:11px; width:42px; height:42px; font-size:1.1rem; cursor:pointer; display:grid; place-items:center;}
 
   /* hero */
   .hero{position:relative; overflow:hidden; border:1px solid var(--line); border-radius:22px; background:var(--paper-2); padding:clamp(28px,6vw,60px) clamp(22px,5vw,52px); margin-top:6px;}
   .hero .moto{position:absolute; right:-6%; bottom:-14%; width:min(58%,460px); opacity:.12; pointer-events:none;}
-  .hero .badge-hero{height:clamp(56px,10vw,96px); width:auto; display:block; margin-bottom:22px;}
+  .hero .badge-hero{height:clamp(56px,10vw,96px); width:auto; margin-bottom:22px;}
   .hero .lead{margin:0 0 26px;}
   .cta-row{display:flex; flex-wrap:wrap; gap:12px; align-items:center;}
   .btn{display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:13px 22px; font-size:15px; font-weight:700; text-decoration:none; cursor:pointer; border:1px solid transparent;}
   .btn-primary{background:var(--accent); color:var(--on-accent);}
   .btn-ghost{background:transparent; color:var(--ink); border-color:var(--line);}
 
+  .t-ink{display:block;}
   .t-cream{display:none;}
   :root[data-theme="dark"] .t-ink{display:none;}
   :root[data-theme="dark"] .t-cream{display:block;}
