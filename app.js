@@ -587,6 +587,12 @@ function chooseCategory(catId) {
   if (cat) {
     if (!dayDraft.kmDirty) el.dayKm.value = cat.defKm > 0 ? cat.defKm : "";
     if (!dayDraft.durDirty) setDurationInputs(cat.defMin > 0 ? cat.defMin : 0);
+  } else {
+    // « Aucune (pas de moto) » : on vide km/temps (la note reste possible).
+    el.dayKm.value = "";
+    setDurationInputs(0);
+    dayDraft.kmDirty = false;
+    dayDraft.durDirty = false;
   }
 
   renderDayChoices(); // rafraîchit la sélection cochée (pas d'écriture)
