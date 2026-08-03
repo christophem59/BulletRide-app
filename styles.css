@@ -197,7 +197,7 @@ body {
   width: min(56%, 190px);
   height: auto;
   opacity: 0.5;
-  margin-bottom: 12px;
+  margin: 0 auto 12px;
 }
 
 /* Bouton "aujourd'hui" */
