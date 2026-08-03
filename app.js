@@ -757,11 +757,11 @@ function renderMonthView() {
     const wrap = document.createElement("div");
     wrap.className = "mv-empty-state";
     const imgInk = document.createElement("img");
-    imgInk.src = "moto-ink.png?v=1";
+    imgInk.src = "chagrin-ink.png?v=1";
     imgInk.alt = "";
     imgInk.className = "mv-empty-moto t-ink";
     const imgCream = document.createElement("img");
-    imgCream.src = "moto.png?v=1";
+    imgCream.src = "chagrin-cream.png?v=1";
     imgCream.alt = "";
     imgCream.className = "mv-empty-moto t-cream";
     const empty = document.createElement("p");

@@ -194,10 +194,10 @@ body {
 /* État vide (vue mensuelle) */
 .mv-empty-state { text-align: center; padding: 20px 0 8px; }
 .mv-empty-moto {
-  width: min(78%, 280px);
+  width: min(56%, 190px);
   height: auto;
-  opacity: 0.4;
-  margin-bottom: 10px;
+  opacity: 0.5;
+  margin-bottom: 12px;
 }
 
 /* Bouton "aujourd'hui" */

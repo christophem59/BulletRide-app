@@ -1,6 +1,6 @@
 // Incrémenter ce numéro à chaque changement du code de l'app force une
 // invalidation propre de l'ancien cache (voir activate ci-dessous).
-const CACHE_NAME = "bulletride-shell-v18";
+const CACHE_NAME = "bulletride-shell-v19";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -14,6 +14,8 @@ const APP_SHELL = [
   "./moto-ink.png?v=1",
   "./titre-ink.png?v=1",
   "./titre-cream.png?v=1",
+  "./chagrin-ink.png?v=1",
+  "./chagrin-cream.png?v=1",
 ];
 
 self.addEventListener("install", (event) => {

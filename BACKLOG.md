@@ -14,7 +14,7 @@ Rien actuellement.
 
 ### 2. Design
 
-- **État vide des mois** : retirer l'illustration moto de l'état vide « Aucune sortie ce mois-ci » — redondante avec la moto en filigrane de fond (garder juste le texte).
+Rien actuellement.
 
 ### 3. Infrastructure & données
 
@@ -33,6 +33,7 @@ Rien actuellement.
 
 ## Fait récemment
 
+- État vide des mois : l'illustration moto (redondante avec le filigrane de fond) est remplacée par une illustration dédiée « motard chagrin » (buste géométrique triste), détourée en 2 teintes selon le thème (bordeaux clair / crème sombre), sans le texte « CHAGRIN ». Bascule clair/sombre en bouton poussoir type iOS (☀️/🌙 avec pouce coulissant) dans l'app et la présentation.
 - Refonte graphique globale (identité bordeaux / crème / carnet à points) : deux thèmes **clair (papier crème, encre bordeaux)** et **sombre (anthracite chaud, tracés crème + accents bordeaux)** via variables CSS, avec **bascule clair/sombre** (bouton ☀️/🌙, défaut selon l'appareil, choix mémorisé, `meta theme-color` synchronisé). Fond en texture « carnet à points » ; **image de titre** (badge « BulletRide ») dans le bandeau à la place du texte + ancienne icône (détourée en 2 teintes selon le thème) ; **wordmark en filigrane** en fond, tronqué ~50 % collé à gauche ; illustration moto d'état vide déclinée bordeaux (clair) / crème (sombre). Boutons principaux en bordeaux. Filigrane moto à 20 % d'opacité (bordeaux sur crème, crème sur sombre). Assets détourés via PIL (seuillage + suppression des composantes connexes pour retirer les points du papier). Favicon (chef) inchangée. **Validé sur navigateur et mobile, icônes OK.**
 - Picto moto (illustration) : image `picto moto.jpeg` détourée via PIL (tracé recoloré crème, fond crème + points supprimés, recadrée) → `moto.png` (crème sur transparent, rend sur fond sombre). Utilisée en hero sous le bandeau (vue annuelle) et en illustration d'état vide « Aucune sortie ce mois-ci » (vue mensuelle). Source hors repo (`~/Downloads/BulletRide/`).
 - Logo (intégration) : icône fournie (tête de chef amérindien géométrique sur carnet à points) intégrée en favicon (`favicon.png` 64px), dans le bandeau de l'app (remplace l'emoji 🏍️) et comme icônes PWA `icon-192/512.png` (install Android / écran d'accueil). Source : `~/Downloads/BulletRide/icone bulletride.jpeg` (hors repo), redimensionnée via `sips`. Reste à faire : refonte graphique globale à partir de cette identité.
