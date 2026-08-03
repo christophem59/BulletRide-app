@@ -459,6 +459,10 @@ function renderLegend() {
 /* --------------------------- Interaction jour --------------------------- */
 
 let selectedDayKey = null;
+// Brouillon de la modale : rien n'est écrit tant qu'on ne clique pas Terminé.
+// kmDirty/durDirty = l'utilisateur a saisi une valeur à la main (à ne pas
+// écraser quand il change de catégorie).
+let dayDraft = null;
 
 function formatDayTitle(key) {
   const [y, m, d] = key.split("-").map(Number);
@@ -486,35 +490,48 @@ function readDurationMinutes() {
 
 function openDayModal(key) {
   selectedDayKey = key;
-  document.getElementById("day-modal-title").textContent = formatDayTitle(key);
-  renderDayChoices(key);
   const entry = dayEntry(key);
+  // Les valeurs déjà enregistrées comptent comme "saisies main" : on ne les
+  // écrase pas si l'utilisateur change de catégorie.
+  dayDraft = {
+    cat: (entry && entry.cat) || null,
+    kmDirty: !!(entry && entry.km > 0),
+    durDirty: !!(entry && entry.min > 0),
+  };
+  document.getElementById("day-modal-title").textContent = formatDayTitle(key);
   el.dayNote.value = (entry && entry.note) || "";
   el.dayKm.value = entry && entry.km ? entry.km : "";
   setDurationInputs(entry && entry.min);
+  renderDayChoices();
   el.dayOverlay.classList.remove("hidden");
 }
 
-// Enregistre note + km + temps du jour en cours (sans fermer).
-function commitDayFields() {
-  if (!selectedDayKey) return;
-  writeDay(selectedDayKey, {
-    note: el.dayNote.value,
-    km: el.dayKm.value,
-    min: readDurationMinutes(),
-  });
-  updateDayCell(selectedDayKey);
-  renderStats();
-}
-
-function closeDayModal() {
-  commitDayFields();
+// Ferme SANS enregistrer (✕, clic extérieur, Échap).
+function cancelDayModal() {
   el.dayOverlay.classList.add("hidden");
   selectedDayKey = null;
+  dayDraft = null;
 }
 
-function renderDayChoices(key) {
-  const current = dayCat(key);
+// Seul chemin qui enregistre : bouton Terminé.
+function commitDayAndClose() {
+  if (selectedDayKey && dayDraft) {
+    writeDay(selectedDayKey, {
+      cat: dayDraft.cat,
+      note: el.dayNote.value,
+      km: el.dayKm.value,
+      min: readDurationMinutes(),
+    });
+    updateDayCell(selectedDayKey);
+    renderStats();
+  }
+  el.dayOverlay.classList.add("hidden");
+  selectedDayKey = null;
+  dayDraft = null;
+}
+
+function renderDayChoices() {
+  const current = dayDraft ? dayDraft.cat : null;
   const frag = document.createDocumentFragment();
 
   for (const cat of state.categories) {
@@ -561,22 +578,18 @@ function renderDayChoices(key) {
 // Sélectionne une catégorie (ou l'efface). Ne ferme pas : on peut ensuite
 // ajouter une note. La saisie reste rapide grâce au bouton « Terminé ».
 function chooseCategory(catId) {
-  if (!selectedDayKey) return;
-  const key = selectedDayKey;
-  writeDay(key, { cat: catId });
+  if (!dayDraft) return;
+  dayDraft.cat = catId || null;
 
-  // Pré-remplit km/temps avec les valeurs par défaut de la catégorie, mais
-  // seulement si les champs sont vides (on n'écrase jamais une saisie).
+  // Ajuste km/temps proposés sur les défauts de la nouvelle catégorie, sauf
+  // les champs que l'utilisateur a saisis à la main (kmDirty / durDirty).
   const cat = categoryById(catId);
   if (cat) {
-    if (!el.dayKm.value && cat.defKm > 0) el.dayKm.value = cat.defKm;
-    if (!el.dayH.value && !el.dayMin.value && cat.defMin > 0) setDurationInputs(cat.defMin);
-    commitDayFields();
+    if (!dayDraft.kmDirty) el.dayKm.value = cat.defKm > 0 ? cat.defKm : "";
+    if (!dayDraft.durDirty) setDurationInputs(cat.defMin > 0 ? cat.defMin : 0);
   }
 
-  updateDayCell(key);
-  renderStats();
-  renderDayChoices(key); // rafraîchit la sélection cochée
+  renderDayChoices(); // rafraîchit la sélection cochée (pas d'écriture)
 }
 
 function updateDayCell(key) {
@@ -609,11 +622,22 @@ el.dayChoices.addEventListener("click", (e) => {
   chooseCategory(choice.dataset.cat || null);
 });
 
-el.closeDay.addEventListener("click", closeDayModal);
-el.dayDone.addEventListener("click", closeDayModal);
+el.dayDone.addEventListener("click", commitDayAndClose); // seul chemin qui enregistre
+el.closeDay.addEventListener("click", cancelDayModal);
 el.dayOverlay.addEventListener("click", (e) => {
-  if (e.target === el.dayOverlay) closeDayModal();
+  if (e.target === el.dayOverlay) cancelDayModal();
 });
+
+// Marque les champs comme "saisis à la main" pour ne pas les écraser au
+// changement de catégorie.
+el.dayKm.addEventListener("input", () => {
+  if (dayDraft) dayDraft.kmDirty = true;
+});
+const markDurDirty = () => {
+  if (dayDraft) dayDraft.durDirty = true;
+};
+el.dayH.addEventListener("input", markDurDirty);
+el.dayMin.addEventListener("input", markDurDirty);
 
 // Bouton « J'ai roulé aujourd'hui » : bascule sur l'année courante si besoin,
 // puis ouvre la modale du jour.
@@ -630,7 +654,7 @@ el.todayBtn.addEventListener("click", () => {
 // Échap ferme la modale ouverte.
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  if (!el.dayOverlay.classList.contains("hidden")) closeDayModal();
+  if (!el.dayOverlay.classList.contains("hidden")) cancelDayModal();
   else if (!el.overlay.classList.contains("hidden")) closeSettings();
   else if (!el.syncOverlay.classList.contains("hidden")) closeSyncModal();
 });
