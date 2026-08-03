@@ -2,7 +2,7 @@
 
 Bullet journal pour tracker chaque jour où tu as fait de la moto.
 
-**En ligne :** https://christophem59.github.io/BulletRide/ (installable en PWA, fonctionne hors-ligne)
+**En ligne :** https://christophem59.github.io/BulletRide-app/ (installable en PWA, fonctionne hors-ligne)
 
 Vue **grille annuelle** (toute l'année d'un coup, une pastille par jour), colorée
 par **type de sortie**. Un tap sur un jour passe à la catégorie suivante.
