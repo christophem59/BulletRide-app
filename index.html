@@ -54,6 +54,24 @@
     </div>
     <p class="hint">Choisis le type de sortie pour ce jour.</p>
     <div id="day-choices" class="day-choices"></div>
+    <div class="metrics-row">
+      <label class="metric">
+        <span class="metric-label">Distance</span>
+        <span class="metric-inputs">
+          <input id="day-km" type="number" inputmode="numeric" min="0" max="9999" placeholder="0" />
+          <span class="metric-unit">km</span>
+        </span>
+      </label>
+      <label class="metric">
+        <span class="metric-label">Temps de route</span>
+        <span class="metric-inputs">
+          <input id="day-h" type="number" inputmode="numeric" min="0" max="99" placeholder="0" />
+          <span class="metric-unit">h</span>
+          <input id="day-min" type="number" inputmode="numeric" min="0" max="59" placeholder="00" />
+          <span class="metric-unit">min</span>
+        </span>
+      </label>
+    </div>
     <label class="note-field">
       <span class="note-label">Note (optionnel)</span>
       <textarea id="day-note" rows="3" maxlength="280" placeholder="Destination, avec qui, ressenti…"></textarea>
@@ -71,7 +89,7 @@
       <h2>Catégories</h2>
       <button id="btn-close-settings" class="icon-btn" title="Fermer">✕</button>
     </div>
-    <p class="hint">Personnalise le nom et la couleur de chaque catégorie.</p>
+    <p class="hint">Personnalise le nom, la couleur et les valeurs par défaut (km / temps) de chaque catégorie. Les défauts pré-remplissent le jour quand tu choisis la catégorie.</p>
     <div id="cat-editor" class="cat-editor"></div>
     <button id="btn-add-cat" class="btn-secondary">+ Ajouter une catégorie</button>
     <div class="modal-actions">

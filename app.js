@@ -100,7 +100,7 @@ function dayHasNote(key) {
  * Écrit une entrée de jour et nettoie si elle devient vide (pas de catégorie,
  * pas de note). Renvoie l'entrée finale (ou null si supprimée).
  */
-function writeDay(key, { cat, note, km } = {}) {
+function writeDay(key, { cat, note, km, min } = {}) {
   const e = { ...(state.days[key] || {}) };
   if (cat !== undefined) {
     if (cat) e.cat = cat;
@@ -112,10 +112,14 @@ function writeDay(key, { cat, note, km } = {}) {
     else delete e.note;
   }
   if (km !== undefined) {
-    if (km === null || km === "") delete e.km;
-    else e.km = km;
+    if (km === null || km === "" || !(Number(km) > 0)) delete e.km;
+    else e.km = Number(km);
   }
-  const empty = !e.cat && !e.note && e.km === undefined;
+  if (min !== undefined) {
+    if (min === null || min === "" || !(Number(min) > 0)) delete e.min;
+    else e.min = Number(min);
+  }
+  const empty = !e.cat && !e.note && e.km === undefined && e.min === undefined;
   if (empty) {
     if (state.days[key]) delete state.days[key];
     state.tombstones[key] = nowMs(); // marque la suppression pour la synchro
@@ -209,6 +213,9 @@ const el = {
   dayOverlay: document.getElementById("day-overlay"),
   closeDay: document.getElementById("btn-close-day"),
   dayChoices: document.getElementById("day-choices"),
+  dayKm: document.getElementById("day-km"),
+  dayH: document.getElementById("day-h"),
+  dayMin: document.getElementById("day-min"),
   dayNote: document.getElementById("day-note"),
   dayDone: document.getElementById("btn-day-done"),
   statsExtra: document.getElementById("stats-extra"),
@@ -312,6 +319,8 @@ function renderStats() {
   const byMonth = new Array(12).fill(0);
   const byWeekday = new Array(7).fill(0);
   let total = 0;
+  let totalKm = 0;
+  let totalMin = 0;
   const prefix = `${state.year}-`;
 
   for (const [key, entry] of Object.entries(state.days)) {
@@ -320,18 +329,33 @@ function renderStats() {
     if (!categoryById(catId)) continue; // seuls les jours "de moto" comptent
     counts[catId] = (counts[catId] || 0) + 1;
     total++;
+    if (entry.km > 0) totalKm += entry.km;
+    if (entry.min > 0) totalMin += entry.min;
     const [y, m, d] = key.split("-").map(Number);
     byMonth[m - 1]++;
     byWeekday[weekdayMondayFirst(y, m - 1, d)]++;
   }
 
-  /* --- Chips : total + par catégorie --- */
+  /* --- Chips : total + km + temps + par catégorie --- */
   const frag = document.createDocumentFragment();
 
   const totalChip = document.createElement("div");
   totalChip.className = "stat-chip";
   totalChip.innerHTML = `<span class="stat-total"><strong>${total}</strong></span> jour${total > 1 ? "s" : ""} de moto`;
   frag.appendChild(totalChip);
+
+  if (totalKm > 0) {
+    const kmChip = document.createElement("div");
+    kmChip.className = "stat-chip";
+    kmChip.innerHTML = `<strong>${Math.round(totalKm).toLocaleString("fr-FR")}</strong> km`;
+    frag.appendChild(kmChip);
+  }
+  if (totalMin > 0) {
+    const timeChip = document.createElement("div");
+    timeChip.className = "stat-chip";
+    timeChip.innerHTML = `<strong>${formatDuration(totalMin)}</strong> de route`;
+    frag.appendChild(timeChip);
+  }
 
   for (const cat of state.categories) {
     const n = counts[cat.id] || 0;
@@ -356,6 +380,15 @@ function renderStats() {
 const WEEKDAYS_FULL = [
   "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche",
 ];
+
+// Minutes -> "2 h 30" / "3 h" / "45 min"
+function formatDuration(min) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h && m) return `${h} h ${String(m).padStart(2, "0")}`;
+  if (h) return `${h} h`;
+  return `${m} min`;
+}
 
 function renderStatsExtra({ total, byMonth, byWeekday }) {
   if (total === 0) {
@@ -433,24 +466,49 @@ function formatDayTitle(key) {
   return `${WEEKDAYS_FULL[wd]} ${d} ${MONTHS[m - 1]} ${y}`;
 }
 
+function setDurationInputs(min) {
+  if (min && Number(min) > 0) {
+    el.dayH.value = Math.floor(min / 60) || "";
+    el.dayMin.value = min % 60 || (Math.floor(min / 60) ? 0 : "");
+  } else {
+    el.dayH.value = "";
+    el.dayMin.value = "";
+  }
+}
+
+// Minutes totales saisies dans les champs h/min (ou "" si rien).
+function readDurationMinutes() {
+  const h = parseInt(el.dayH.value, 10) || 0;
+  const m = parseInt(el.dayMin.value, 10) || 0;
+  const total = h * 60 + m;
+  return total > 0 ? total : "";
+}
+
 function openDayModal(key) {
   selectedDayKey = key;
   document.getElementById("day-modal-title").textContent = formatDayTitle(key);
   renderDayChoices(key);
   const entry = dayEntry(key);
   el.dayNote.value = (entry && entry.note) || "";
+  el.dayKm.value = entry && entry.km ? entry.km : "";
+  setDurationInputs(entry && entry.min);
   el.dayOverlay.classList.remove("hidden");
 }
 
-// Enregistre la note saisie pour le jour en cours (sans fermer).
-function commitNote() {
+// Enregistre note + km + temps du jour en cours (sans fermer).
+function commitDayFields() {
   if (!selectedDayKey) return;
-  writeDay(selectedDayKey, { note: el.dayNote.value });
+  writeDay(selectedDayKey, {
+    note: el.dayNote.value,
+    km: el.dayKm.value,
+    min: readDurationMinutes(),
+  });
   updateDayCell(selectedDayKey);
+  renderStats();
 }
 
 function closeDayModal() {
-  commitNote();
+  commitDayFields();
   el.dayOverlay.classList.add("hidden");
   selectedDayKey = null;
 }
@@ -506,6 +564,16 @@ function chooseCategory(catId) {
   if (!selectedDayKey) return;
   const key = selectedDayKey;
   writeDay(key, { cat: catId });
+
+  // Pré-remplit km/temps avec les valeurs par défaut de la catégorie, mais
+  // seulement si les champs sont vides (on n'écrase jamais une saisie).
+  const cat = categoryById(catId);
+  if (cat) {
+    if (!el.dayKm.value && cat.defKm > 0) el.dayKm.value = cat.defKm;
+    if (!el.dayH.value && !el.dayMin.value && cat.defMin > 0) setDurationInputs(cat.defMin);
+    commitDayFields();
+  }
+
   updateDayCell(key);
   renderStats();
   renderDayChoices(key); // rafraîchit la sélection cochée
@@ -605,53 +673,34 @@ function closeSettings() {
   el.overlay.classList.add("hidden");
 }
 
-function renderCatEditor(cats) {
-  const frag = document.createDocumentFragment();
-  cats.forEach((cat, index) => {
-    const row = document.createElement("div");
-    row.className = "cat-row";
-    row.dataset.index = index;
-    if (cat.id) row.dataset.id = cat.id;
-
-    const color = document.createElement("input");
-    color.type = "color";
-    color.value = cat.color;
-    color.className = "cat-color";
-
-    const label = document.createElement("input");
-    label.type = "text";
-    label.value = cat.label;
-    label.placeholder = "Nom de la catégorie";
-    label.className = "cat-label";
-    label.maxLength = 24;
-
-    const del = document.createElement("button");
-    del.type = "button";
-    del.className = "btn-del";
-    del.textContent = "🗑";
-    del.title = "Supprimer";
-    del.addEventListener("click", () => {
-      row.remove();
-    });
-
-    row.append(color, label, del);
-    frag.appendChild(row);
-  });
-  el.catEditor.replaceChildren(frag);
+function numInput(cls, value, placeholder, max) {
+  const i = document.createElement("input");
+  i.type = "number";
+  i.inputMode = "numeric";
+  i.min = "0";
+  if (max) i.max = String(max);
+  i.className = cls;
+  i.placeholder = placeholder;
+  if (value > 0) i.value = value;
+  return i;
 }
 
-function addCatRow() {
+function buildCatRow(cat) {
   const row = document.createElement("div");
   row.className = "cat-row";
+  if (cat.id) row.dataset.id = cat.id;
 
-  const palette = ["#ffd166", "#06d6a0", "#118ab2", "#ef476f", "#9b5de5", "#f15bb5"];
+  const main = document.createElement("div");
+  main.className = "cat-row-main";
+
   const color = document.createElement("input");
   color.type = "color";
-  color.value = palette[el.catEditor.children.length % palette.length];
+  color.value = cat.color;
   color.className = "cat-color";
 
   const label = document.createElement("input");
   label.type = "text";
+  label.value = cat.label || "";
   label.placeholder = "Nom de la catégorie";
   label.className = "cat-label";
   label.maxLength = 24;
@@ -663,9 +712,44 @@ function addCatRow() {
   del.title = "Supprimer";
   del.addEventListener("click", () => row.remove());
 
-  row.append(color, label, del);
+  main.append(color, label, del);
+
+  // Ligne "valeurs par défaut" (pré-remplies au choix de la catégorie).
+  const defs = document.createElement("div");
+  defs.className = "cat-row-defaults";
+  const lbl = document.createElement("span");
+  lbl.className = "cat-def-label";
+  lbl.textContent = "Défauts :";
+  const km = numInput("cat-defkm", cat.defKm, "0", 9999);
+  const kmU = document.createElement("span");
+  kmU.className = "cat-unit";
+  kmU.textContent = "km";
+  const defMin = cat.defMin || 0;
+  const h = numInput("cat-defh", defMin ? Math.floor(defMin / 60) : 0, "0", 99);
+  const hU = document.createElement("span");
+  hU.className = "cat-unit";
+  hU.textContent = "h";
+  const m = numInput("cat-defmin", defMin ? defMin % 60 : 0, "0", 59);
+  const mU = document.createElement("span");
+  mU.className = "cat-unit";
+  mU.textContent = "min";
+  defs.append(lbl, km, kmU, h, hU, m, mU);
+
+  row.append(main, defs);
+  return row;
+}
+
+function renderCatEditor(cats) {
+  const frag = document.createDocumentFragment();
+  cats.forEach((cat) => frag.appendChild(buildCatRow(cat)));
+  el.catEditor.replaceChildren(frag);
+}
+
+function addCatRow() {
+  const palette = ["#ffd166", "#06d6a0", "#118ab2", "#ef476f", "#9b5de5", "#f15bb5"];
+  const row = buildCatRow({ color: palette[el.catEditor.children.length % palette.length] });
   el.catEditor.appendChild(row);
-  label.focus();
+  row.querySelector(".cat-label").focus();
 }
 
 function saveCatsFromEditor() {
@@ -682,7 +766,14 @@ function saveCatsFromEditor() {
       ? existingId
       : slugify(label, usedIds);
     usedIds.push(id);
-    result.push({ id, label, color });
+
+    const cat = { id, label, color };
+    const defKm = Number(row.querySelector(".cat-defkm").value) || 0;
+    const defMin = (Number(row.querySelector(".cat-defh").value) || 0) * 60
+      + (Number(row.querySelector(".cat-defmin").value) || 0);
+    if (defKm > 0) cat.defKm = defKm;
+    if (defMin > 0) cat.defMin = defMin;
+    result.push(cat);
   }
 
   if (result.length === 0) {
