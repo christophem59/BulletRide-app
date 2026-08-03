@@ -214,6 +214,7 @@ const el = {
   mvGrid: document.getElementById("mv-grid"),
   mvList: document.getElementById("mv-list"),
   toast: document.getElementById("toast"),
+  themeBtn: document.getElementById("btn-theme"),
   settingsBtn: document.getElementById("btn-settings"),
   overlay: document.getElementById("settings-overlay"),
   closeSettings: document.getElementById("btn-close-settings"),
@@ -755,14 +756,18 @@ function renderMonthView() {
   if (visible.length === 0) {
     const wrap = document.createElement("div");
     wrap.className = "mv-empty-state";
-    const img = document.createElement("img");
-    img.src = "moto.png?v=1";
-    img.alt = "";
-    img.className = "mv-empty-moto";
+    const imgInk = document.createElement("img");
+    imgInk.src = "moto-ink.png?v=1";
+    imgInk.alt = "";
+    imgInk.className = "mv-empty-moto t-ink";
+    const imgCream = document.createElement("img");
+    imgCream.src = "moto.png?v=1";
+    imgCream.alt = "";
+    imgCream.className = "mv-empty-moto t-cream";
     const empty = document.createElement("p");
     empty.className = "mv-empty";
     empty.textContent = "Aucune sortie ce mois-ci.";
-    wrap.append(img, empty);
+    wrap.append(imgInk, imgCream, empty);
     lf.appendChild(wrap);
   }
   for (const [key, e] of visible) {
@@ -1379,8 +1384,46 @@ function disconnectSync() {
   toast("Synchro déconnectée");
 }
 
+/* --------------------------- Thème clair / sombre --------------------------- */
+
+const STORAGE_THEME = "bulletride:theme"; // "light" | "dark" | null (=auto/appareil)
+
+function themeIsDark() {
+  const pref = localStorage.getItem(STORAGE_THEME);
+  if (pref === "dark") return true;
+  if (pref === "light") return false;
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function applyTheme() {
+  const pref = localStorage.getItem(STORAGE_THEME);
+  const root = document.documentElement;
+  if (pref === "light" || pref === "dark") root.setAttribute("data-theme", pref);
+  else root.removeAttribute("data-theme");
+
+  const dark = themeIsDark();
+  // Le bouton montre l'action à venir (bascule vers l'autre thème).
+  el.themeBtn.textContent = dark ? "☀️" : "🌙";
+  el.themeBtn.title = dark ? "Passer en clair" : "Passer en sombre";
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", dark ? "#17110F" : "#F1E7CC");
+}
+
+el.themeBtn.addEventListener("click", () => {
+  localStorage.setItem(STORAGE_THEME, themeIsDark() ? "light" : "dark");
+  applyTheme();
+});
+
+// Suit l'appareil tant que l'utilisateur n'a pas choisi explicitement.
+if (window.matchMedia) {
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (!localStorage.getItem(STORAGE_THEME)) applyTheme();
+  });
+}
+
 /* --------------------------- Init --------------------------- */
 
+applyTheme();
 render();
 
 if (getSyncConfig()) {

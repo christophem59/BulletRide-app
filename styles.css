@@ -1,24 +1,63 @@
+/* Thème clair (papier crème) — par défaut */
 :root {
-  --bg: #141414;
-  --bg-elev: #1e1e1e;
-  --bg-elev-2: #262626;
-  --border: #333;
-  --text: #f2f2f2;
-  --text-dim: #9a9a9a;
-  --empty-cell: #2a2a2a;
-  --accent: #ff6b35;
+  --bg: #F1E7CC;
+  --bg-elev: #F7F0DC;
+  --bg-elev-2: #EBE0C2;
+  --border: rgba(74, 20, 32, 0.18);
+  --text: #48141F;
+  --text-dim: #8a5a3f;
+  --empty-cell: #E4D6B4;
+  --accent: #6E2233;
+  --on-accent: #F3ECD6;
+  --topbar-bg: rgba(241, 231, 204, 0.92);
+  --dot: rgba(74, 20, 32, 0.16);
   --radius: 12px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Thème sombre (crème/bordeaux) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17110F;
+    --bg-elev: #211A16;
+    --bg-elev-2: #2A211C;
+    --border: rgba(239, 231, 208, 0.13);
+    --text: #EFE7D0;
+    --text-dim: #b3a08f;
+    --empty-cell: #2C241E;
+    --accent: #8A2740;
+    --on-accent: #F3ECD6;
+    --topbar-bg: rgba(23, 17, 15, 0.92);
+    --dot: rgba(239, 231, 208, 0.09);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17110F;
+  --bg-elev: #211A16;
+  --bg-elev-2: #2A211C;
+  --border: rgba(239, 231, 208, 0.13);
+  --text: #EFE7D0;
+  --text-dim: #b3a08f;
+  --empty-cell: #2C241E;
+  --accent: #8A2740;
+  --on-accent: #F3ECD6;
+  --topbar-bg: rgba(23, 17, 15, 0.92);
+  --dot: rgba(239, 231, 208, 0.09);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 .hidden { display: none !important; }
 
+html {
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.6px);
+  background-size: 15px 15px;
+}
+
 html, body {
   margin: 0;
-  background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -40,12 +79,34 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: calc(12px + var(--safe-top)) 16px 12px;
-  background: rgba(20, 20, 20, 0.92);
+  background: var(--topbar-bg);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
-.topbar h1 { font-size: 1.25rem; margin: 0; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
-.brand-logo { width: 28px; height: 28px; border-radius: 7px; display: block; flex: none; }
+.topbar h1 { font-size: 1.25rem; margin: 0; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; }
+.brand-title { height: 38px; width: auto; display: block; }
+
+/* Bascule d'image selon le thème (tracé bordeaux clair / crème sombre) */
+.t-cream { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .t-ink { display: none; }
+  :root:not([data-theme="light"]) .t-cream { display: block; }
+}
+:root[data-theme="dark"] .t-ink { display: none; }
+:root[data-theme="dark"] .t-cream { display: block; }
+
+/* Filigrane wordmark en fond, tronqué ~50 % et collé à gauche */
+.page-bg {
+  position: fixed;
+  left: 0;
+  top: 96px;
+  width: min(150vw, 1200px);
+  height: auto;
+  opacity: 0.06;
+  z-index: -1;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
 .topbar-actions { display: flex; gap: 8px; }
 
 .icon-btn {
@@ -90,15 +151,14 @@ body {
   width: min(78%, 280px);
   height: auto;
   opacity: 0.4;
-  display: block;
-  margin: 0 auto 10px;
+  margin-bottom: 10px;
 }
 
 /* Bouton "aujourd'hui" */
 .today-cta { display: flex; justify-content: center; padding: 6px 16px 2px; }
 .btn-today {
   background: var(--accent);
-  color: #000;
+  color: var(--on-accent);
   font-weight: 700;
   border: none;
   border-radius: 999px;
@@ -593,6 +653,6 @@ body {
   border: 1px solid var(--border);
 }
 .btn-secondary { width: 100%; margin-top: 12px; background: var(--bg-elev-2); color: var(--text); }
-.btn-primary { background: var(--accent); color: #000; font-weight: 700; border-color: var(--accent); }
+.btn-primary { background: var(--accent); color: var(--on-accent); font-weight: 700; border-color: var(--accent); }
 .btn-ghost { background: none; color: var(--text-dim); }
 .modal-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 18px; }

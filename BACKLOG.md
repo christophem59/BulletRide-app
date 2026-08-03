@@ -14,7 +14,7 @@ Rien actuellement.
 
 ### 2. Design
 
-- **Design global de la page** : refonte graphique, à partir du logo obtenu.
+- **Refonte graphique — finitions** : ajustements après la refonte (position/opacité du filigrane, teintes des catégories sur papier, couleurs du manifest/splash, etc.).
 - **Vision mobile à travailler** : passer en revue et retravailler l'affichage sur mobile.
 
 ### 3. Infrastructure & données
@@ -34,6 +34,7 @@ Rien actuellement.
 
 ## Fait récemment
 
+- Refonte graphique globale (identité bordeaux / crème / carnet à points) : deux thèmes **clair (papier crème, encre bordeaux)** et **sombre (anthracite chaud, tracés crème + accents bordeaux)** via variables CSS, avec **bascule clair/sombre** (bouton ☀️/🌙, défaut selon l'appareil, choix mémorisé, `meta theme-color` synchronisé). Fond en texture « carnet à points » ; **image de titre** (badge « BulletRide ») dans le bandeau à la place du texte + ancienne icône (détourée en 2 teintes selon le thème) ; **wordmark en filigrane** en fond, tronqué ~50 % collé à gauche ; illustration moto d'état vide déclinée bordeaux (clair) / crème (sombre). Boutons principaux en bordeaux. Assets détourés via PIL (seuillage + suppression des composantes connexes pour retirer les points du papier). Favicon (chef) inchangée.
 - Picto moto (illustration) : image `picto moto.jpeg` détourée via PIL (tracé recoloré crème, fond crème + points supprimés, recadrée) → `moto.png` (crème sur transparent, rend sur fond sombre). Utilisée en hero sous le bandeau (vue annuelle) et en illustration d'état vide « Aucune sortie ce mois-ci » (vue mensuelle). Source hors repo (`~/Downloads/BulletRide/`).
 - Logo (intégration) : icône fournie (tête de chef amérindien géométrique sur carnet à points) intégrée en favicon (`favicon.png` 64px), dans le bandeau de l'app (remplace l'emoji 🏍️) et comme icônes PWA `icon-192/512.png` (install Android / écran d'accueil). Source : `~/Downloads/BulletRide/icone bulletride.jpeg` (hors repo), redimensionnée via `sips`. Reste à faire : refonte graphique globale à partir de cette identité.
 - Vue mensuelle détaillée : tap sur le titre d'un mois (vue annuelle) ouvre un écran dédié — en-tête « ‹ Année » + navigation mois ‹ › (avec bascule d'année), récap du mois (sorties / km / temps), grand calendrier (couleur + barre note, sans km) et liste « Sorties du mois » avec type, km, temps et note lisibles. Un tap sur une case ou une ligne ouvre la modale d'édition ; l'écran se rafraîchit après édition.
