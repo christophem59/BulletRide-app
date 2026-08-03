@@ -14,8 +14,7 @@ Rien actuellement.
 
 ### 2. Design
 
-- **Logo** (à faire en premier) : créer un logo pour l'app.
-- **Design global de la page** : refonte graphique, une fois le logo obtenu.
+- **Design global de la page** : refonte graphique, à partir du logo obtenu.
 - **Vision mobile à travailler** : passer en revue et retravailler l'affichage sur mobile.
 
 ### 3. Infrastructure & données
@@ -35,6 +34,7 @@ Rien actuellement.
 
 ## Fait récemment
 
+- Logo (intégration) : icône fournie (tête de chef amérindien géométrique sur carnet à points) intégrée en favicon (`favicon.png` 64px), dans le bandeau de l'app (remplace l'emoji 🏍️) et comme icônes PWA `icon-192/512.png` (install Android / écran d'accueil). Source : `~/Downloads/BulletRide/icone bulletride.jpeg` (hors repo), redimensionnée via `sips`. Reste à faire : refonte graphique globale à partir de cette identité.
 - Vue mensuelle détaillée : tap sur le titre d'un mois (vue annuelle) ouvre un écran dédié — en-tête « ‹ Année » + navigation mois ‹ › (avec bascule d'année), récap du mois (sorties / km / temps), grand calendrier (couleur + barre note, sans km) et liste « Sorties du mois » avec type, km, temps et note lisibles. Un tap sur une case ou une ligne ouvre la modale d'édition ; l'écran se rafraîchit après édition.
 - km + temps de route par jour : deux champs (distance en km, temps en h/min) dans la modale d'un jour, avec totaux annuels dans les stats (« X km », « X h de route »). Valeurs par défaut par catégorie (défauts km/temps dans l'éditeur 🎨) : choisir la catégorie pré-remplit les champs du jour s'ils sont vides (jamais d'écrasement d'une saisie) — pensé pour le trajet travail toujours identique. Modèle de jour : `{ cat, note, km, min, u }` ; catégorie : `{ id, label, color, defKm, defMin }`. Synchronisés comme le reste.
 - Synchro des données (GitHub) : le `localStorage` reste la copie de travail (offline-first) et un fichier privé `bulletride.json` dans un repo GitHub choisi sert de sauvegarde + synchro multi-appareils, via l'API Contents avec un PAT stocké uniquement sur l'appareil (pattern Omnivore). Pull+fusion au chargement, push débounced à chaque modif, resynchro au retour en ligne. Fusion sans perte jour par jour : horodatage `u` par jour + tombstones pour les suppressions (le plus récent gagne) ; catégories en dernier-écrit-gagne via `catsU` ; retry auto sur conflit 409/422. Modale ☁️ pour connecter le repo/token (repo privé dédié — le repo de code BulletRide-app étant public). Logique de fusion couverte par des tests unitaires ; round-trip GitHub réel à valider avec un vrai repo privé + PAT.
