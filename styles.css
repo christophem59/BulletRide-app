@@ -14,6 +14,8 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+.hidden { display: none !important; }
+
 html, body {
   margin: 0;
   background: var(--bg);
@@ -397,6 +399,47 @@ body {
   min-height: 68px;
 }
 .modal-actions-end { justify-content: flex-end; }
+
+/* Synchronisation */
+.icon-btn.sync-on { border-color: var(--accent); }
+.icon-btn.syncing { animation: sync-pulse 1s ease-in-out infinite; }
+@keyframes sync-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+#sync-form label, #sync-connected label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin: 12px 0 0;
+}
+#sync-form input[type="text"], #sync-form input[type="password"] {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+#sync-form code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 0.85em;
+}
+.sync-status {
+  font-size: 0.85rem;
+  margin: 6px 0 2px;
+  min-height: 1.2em;
+  color: var(--text-dim);
+}
+.sync-status.busy { color: var(--text-dim); }
+.sync-status.ok { color: #80ed99; }
+.sync-status.err { color: #ff6b6b; }
+.sync-status:empty { display: none; }
 
 .btn-secondary, .btn-primary, .btn-ghost {
   border-radius: 10px;

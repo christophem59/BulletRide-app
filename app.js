@@ -5,8 +5,16 @@
  * Vanilla JS PWA, données stockées localement (localStorage).
  * ------------------------------------------------------------------ */
 
-const STORAGE_DAYS = "bulletride:days";       // { "YYYY-MM-DD": { cat, note, km } }
+const STORAGE_DAYS = "bulletride:days";       // { "YYYY-MM-DD": { cat, note, km, u } }
 const STORAGE_CATS = "bulletride:categories"; // [ { id, label, color } ]
+const STORAGE_TOMBS = "bulletride:tombstones"; // { "YYYY-MM-DD": u }  (suppressions)
+const STORAGE_CATS_U = "bulletride:catsU";     // horodatage des catégories (ms)
+const STORAGE_SYNC = "bulletride:sync";        // { owner, repo, branch, token }
+const STORAGE_LAST_SYNC = "bulletride:lastSync";
+
+function nowMs() {
+  return Date.now();
+}
 
 const DEFAULT_CATEGORIES = [
   { id: "balade",  label: "Balade",   color: "#ff6b35" },
@@ -27,7 +35,25 @@ const state = {
   year: new Date().getFullYear(),
   days: loadDays(),
   categories: loadCategories(),
+  tombstones: loadTombstones(),
+  catsU: loadCatsU(),
 };
+
+function loadTombstones() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_TOMBS)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveTombstones() {
+  localStorage.setItem(STORAGE_TOMBS, JSON.stringify(state.tombstones));
+}
+
+function loadCatsU() {
+  return Number(localStorage.getItem(STORAGE_CATS_U)) || 0;
+}
 
 function loadDays() {
   let raw;
@@ -74,7 +100,7 @@ function dayHasNote(key) {
  * Écrit une entrée de jour et nettoie si elle devient vide (pas de catégorie,
  * pas de note). Renvoie l'entrée finale (ou null si supprimée).
  */
-function writeDay(key, { cat, note } = {}) {
+function writeDay(key, { cat, note, km } = {}) {
   const e = { ...(state.days[key] || {}) };
   if (cat !== undefined) {
     if (cat) e.cat = cat;
@@ -85,14 +111,25 @@ function writeDay(key, { cat, note } = {}) {
     if (n) e.note = n;
     else delete e.note;
   }
+  if (km !== undefined) {
+    if (km === null || km === "") delete e.km;
+    else e.km = km;
+  }
   const empty = !e.cat && !e.note && e.km === undefined;
   if (empty) {
-    delete state.days[key];
+    if (state.days[key]) delete state.days[key];
+    state.tombstones[key] = nowMs(); // marque la suppression pour la synchro
     saveDays();
+    saveTombstones();
+    scheduleSync();
     return null;
   }
+  e.u = nowMs();
+  delete state.tombstones[key]; // (ré)écriture : annule une éventuelle suppression
   state.days[key] = e;
   saveDays();
+  saveTombstones();
+  scheduleSync();
   return e;
 }
 
@@ -106,8 +143,12 @@ function loadCategories() {
   return DEFAULT_CATEGORIES.map((c) => ({ ...c }));
 }
 
-function saveCategories() {
+function saveCategories(bump = true) {
   localStorage.setItem(STORAGE_CATS, JSON.stringify(state.categories));
+  if (bump) {
+    state.catsU = nowMs();
+    localStorage.setItem(STORAGE_CATS_U, String(state.catsU));
+  }
 }
 
 /* --------------------------- Utilitaires --------------------------- */
@@ -172,6 +213,20 @@ const el = {
   dayDone: document.getElementById("btn-day-done"),
   statsExtra: document.getElementById("stats-extra"),
   todayBtn: document.getElementById("btn-today"),
+  syncBtn: document.getElementById("btn-sync"),
+  syncOverlay: document.getElementById("sync-overlay"),
+  closeSync: document.getElementById("btn-close-sync"),
+  syncForm: document.getElementById("sync-form"),
+  syncConnected: document.getElementById("sync-connected"),
+  syncOwner: document.getElementById("sync-owner"),
+  syncRepo: document.getElementById("sync-repo"),
+  syncBranch: document.getElementById("sync-branch"),
+  syncToken: document.getElementById("sync-token"),
+  syncConnect: document.getElementById("btn-sync-connect"),
+  syncNowBtn: document.getElementById("btn-sync-now"),
+  syncDisconnect: document.getElementById("btn-sync-disconnect"),
+  syncStatus: document.getElementById("sync-status"),
+  syncRepoLabel: document.getElementById("sync-repo-label"),
 };
 
 /* --------------------------- Rendu --------------------------- */
@@ -509,6 +564,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (!el.dayOverlay.classList.contains("hidden")) closeDayModal();
   else if (!el.overlay.classList.contains("hidden")) closeSettings();
+  else if (!el.syncOverlay.classList.contains("hidden")) closeSyncModal();
 });
 
 /* --------------------------- Navigation année --------------------------- */
@@ -643,12 +699,21 @@ function saveCatsFromEditor() {
   for (const [key, entry] of Object.entries(state.days)) {
     if (entry.cat && !usedIds.includes(entry.cat)) {
       delete entry.cat;
-      if (!entry.note && entry.km === undefined) delete state.days[key];
+      if (!entry.note && entry.km === undefined) {
+        delete state.days[key];
+        state.tombstones[key] = nowMs();
+      } else {
+        entry.u = nowMs();
+      }
       removed++;
     }
   }
-  if (removed) saveDays();
+  if (removed) {
+    saveDays();
+    saveTombstones();
+  }
 
+  scheduleSync();
   closeSettings();
   render();
   toast("Catégories enregistrées");
@@ -667,6 +732,17 @@ el.addCat.addEventListener("click", addCatRow);
 el.saveCats.addEventListener("click", saveCatsFromEditor);
 el.resetCats.addEventListener("click", resetCats);
 
+/* --------------------------- Événements synchro --------------------------- */
+
+el.syncBtn.addEventListener("click", openSyncModal);
+el.closeSync.addEventListener("click", closeSyncModal);
+el.syncOverlay.addEventListener("click", (e) => {
+  if (e.target === el.syncOverlay) closeSyncModal();
+});
+el.syncConnect.addEventListener("click", connectSync);
+el.syncNowBtn.addEventListener("click", () => syncNow());
+el.syncDisconnect.addEventListener("click", disconnectSync);
+
 /* --------------------------- Toast --------------------------- */
 
 let toastTimer = null;
@@ -677,9 +753,324 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.toast.classList.remove("show"), 2200);
 }
 
+/* --------------------------- Synchronisation GitHub --------------------------- */
+/*
+ * Le localStorage reste la copie de travail (offline-first). GitHub sert de
+ * sauvegarde + synchro multi-appareils : un fichier privé `bulletride.json`
+ * dans un repo choisi par l'utilisateur, lu/écrit via l'API Contents avec un
+ * token personnel stocké uniquement sur l'appareil.
+ *
+ * Fusion sans perte : chaque jour porte un horodatage `u` ; les suppressions
+ * laissent une "tombstone" horodatée. À la fusion, pour chaque date on garde
+ * l'événement le plus récent (écriture ou suppression). Les catégories sont
+ * fusionnées en dernier-écrit-gagne via `catsU`.
+ */
+
+const DATA_PATH = "bulletride.json";
+
+function b64EncodeUnicode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach((b) => (binary += String.fromCharCode(b)));
+  return btoa(binary);
+}
+
+function b64DecodeUnicode(b64) {
+  const binary = atob(b64.replace(/\n/g, ""));
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
+class GitHubStore {
+  constructor(owner, repo, branch, token) {
+    this.owner = owner;
+    this.repo = repo;
+    this.branch = branch || "main";
+    this.token = token;
+    this._shas = {};
+  }
+
+  _headers() {
+    return {
+      Authorization: `Bearer ${this.token}`,
+      Accept: "application/vnd.github+json",
+    };
+  }
+
+  // Renvoie l'objet parsé, ou null si le fichier n'existe pas encore (404).
+  async getFile(path) {
+    const url = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${path}?ref=${encodeURIComponent(this.branch)}`;
+    const resp = await fetch(url, { headers: this._headers() });
+    if (resp.status === 404) {
+      delete this._shas[path];
+      return null;
+    }
+    if (!resp.ok) {
+      const err = new Error(`GitHub ${resp.status} (lecture ${path}) : ${(await resp.text()).slice(0, 160)}`);
+      err.status = resp.status;
+      throw err;
+    }
+    const data = await resp.json();
+    this._shas[path] = data.sha;
+    return JSON.parse(b64DecodeUnicode(data.content));
+  }
+
+  async putFile(path, obj, message) {
+    const url = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${path}`;
+    const content = b64EncodeUnicode(JSON.stringify(obj, null, 2) + "\n");
+    const body = { message, content, branch: this.branch };
+    if (this._shas[path]) body.sha = this._shas[path];
+    const resp = await fetch(url, {
+      method: "PUT",
+      headers: { ...this._headers(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) {
+      const err = new Error(`GitHub ${resp.status} (écriture ${path}) : ${(await resp.text()).slice(0, 160)}`);
+      err.status = resp.status;
+      throw err;
+    }
+    const data = await resp.json();
+    this._shas[path] = data.content.sha;
+  }
+}
+
+/* Fusion pure et testable de deux jeux de données. */
+function computeMerge(local, remote) {
+  const days = { ...(local.days || {}) };
+  const tombstones = { ...(local.tombstones || {}) };
+  let changed = false;
+
+  const keys = new Set([
+    ...Object.keys(local.days || {}),
+    ...Object.keys(local.tombstones || {}),
+    ...Object.keys(remote.days || {}),
+    ...Object.keys(remote.tombstones || {}),
+  ]);
+
+  for (const k of keys) {
+    const cands = [];
+    if (local.days && local.days[k]) cands.push({ t: "e", u: local.days[k].u || 0, v: local.days[k] });
+    if (remote.days && remote.days[k]) cands.push({ t: "e", u: remote.days[k].u || 0, v: remote.days[k] });
+    if (local.tombstones && local.tombstones[k]) cands.push({ t: "d", u: local.tombstones[k] });
+    if (remote.tombstones && remote.tombstones[k]) cands.push({ t: "d", u: remote.tombstones[k] });
+    // le plus récent gagne ; à égalité, l'écriture l'emporte (préserve la donnée)
+    cands.sort((a, b) => b.u - a.u || (a.t === "e" ? -1 : 1));
+    const w = cands[0];
+    if (w.t === "d") {
+      if (days[k]) {
+        delete days[k];
+        changed = true;
+      }
+      if ((tombstones[k] || 0) !== w.u) {
+        tombstones[k] = w.u;
+        changed = true;
+      }
+    } else {
+      if (tombstones[k]) {
+        delete tombstones[k];
+        changed = true;
+      }
+      if (JSON.stringify(days[k]) !== JSON.stringify(w.v)) {
+        days[k] = w.v;
+        changed = true;
+      }
+    }
+  }
+
+  // Catégories : dernier-écrit-gagne.
+  let categories = local.categories;
+  let catsU = local.catsU || 0;
+  if ((remote.catsU || 0) > (local.catsU || 0) && Array.isArray(remote.categories) && remote.categories.length) {
+    categories = remote.categories;
+    catsU = remote.catsU;
+    changed = true;
+  }
+
+  return { days, tombstones, categories, catsU, changed };
+}
+
+// Applique un fichier distant sur l'état local. Renvoie true si l'état a changé.
+function applyRemote(remote) {
+  const merged = computeMerge(
+    { days: state.days, tombstones: state.tombstones, categories: state.categories, catsU: state.catsU },
+    remote || {}
+  );
+  if (!merged.changed) return false;
+  state.days = merged.days;
+  state.tombstones = merged.tombstones;
+  state.categories = merged.categories;
+  state.catsU = merged.catsU;
+  saveDays();
+  saveTombstones();
+  localStorage.setItem(STORAGE_CATS, JSON.stringify(state.categories));
+  localStorage.setItem(STORAGE_CATS_U, String(state.catsU));
+  return true;
+}
+
+function buildPayload() {
+  return {
+    version: 1,
+    updatedAt: nowMs(),
+    days: state.days,
+    tombstones: state.tombstones,
+    categories: state.categories,
+    catsU: state.catsU,
+  };
+}
+
+/* --- Config de synchro --- */
+function getSyncConfig() {
+  try {
+    const c = JSON.parse(localStorage.getItem(STORAGE_SYNC));
+    if (c && c.owner && c.repo && c.token) return { branch: "main", ...c };
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function saveSyncConfig(cfg) {
+  localStorage.setItem(STORAGE_SYNC, JSON.stringify(cfg));
+}
+
+function clearSyncConfig() {
+  localStorage.removeItem(STORAGE_SYNC);
+  localStorage.removeItem(STORAGE_LAST_SYNC);
+}
+
+/* --- Orchestration --- */
+let syncing = false;
+let syncTimer = null;
+
+function isConflict(err) {
+  return err && (err.status === 409 || err.status === 422);
+}
+
+function scheduleSync() {
+  if (!getSyncConfig()) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => syncNow({ silent: true }), 1500);
+}
+
+async function syncNow({ silent } = {}) {
+  const cfg = getSyncConfig();
+  if (!cfg || syncing) return;
+  syncing = true;
+  setSyncStatus("sync");
+  try {
+    const store = new GitHubStore(cfg.owner, cfg.repo, cfg.branch, cfg.token);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const remote = await store.getFile(DATA_PATH); // null si le fichier n'existe pas encore
+      if (applyRemote(remote)) render();
+      try {
+        await store.putFile(DATA_PATH, buildPayload(), `BulletRide sync ${new Date().toISOString().slice(0, 19)}`);
+        break;
+      } catch (e) {
+        if (isConflict(e) && attempt < 2) continue; // conflit : on re-tire puis on repousse
+        throw e;
+      }
+    }
+    const t = nowMs();
+    localStorage.setItem(STORAGE_LAST_SYNC, String(t));
+    setSyncStatus("ok", t);
+    if (!silent) toast("Synchronisé ✓");
+  } catch (e) {
+    setSyncStatus("error", null, e.message);
+    if (!silent) toast("Erreur de synchro");
+    console.warn("Sync error:", e);
+  } finally {
+    syncing = false;
+  }
+}
+
+/* --- UI de synchro --- */
+function setSyncStatus(kind, ts, msg) {
+  if (!el.syncStatus) return;
+  el.syncBtn.classList.toggle("syncing", kind === "sync");
+  el.syncBtn.classList.toggle("sync-on", !!getSyncConfig());
+  if (kind === "sync") {
+    el.syncStatus.textContent = "Synchronisation…";
+    el.syncStatus.className = "sync-status busy";
+  } else if (kind === "ok") {
+    el.syncStatus.textContent = `À jour — dernière synchro à ${new Date(ts).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+    el.syncStatus.className = "sync-status ok";
+  } else if (kind === "error") {
+    el.syncStatus.textContent = `Erreur : ${msg || "synchro impossible"}`;
+    el.syncStatus.className = "sync-status err";
+  } else {
+    el.syncStatus.textContent = "";
+    el.syncStatus.className = "sync-status";
+  }
+}
+
+function renderSyncModal() {
+  const cfg = getSyncConfig();
+  const connected = !!cfg;
+  el.syncForm.classList.toggle("hidden", connected);
+  el.syncConnected.classList.toggle("hidden", !connected);
+  if (connected) {
+    el.syncRepoLabel.textContent = `${cfg.owner}/${cfg.repo}`;
+    const last = Number(localStorage.getItem(STORAGE_LAST_SYNC)) || 0;
+    setSyncStatus(last ? "ok" : "idle", last);
+  } else {
+    // pré-remplit le propriétaire avec le compte connu, pratique
+    if (!el.syncOwner.value) el.syncOwner.value = "christophem59";
+    setSyncStatus("idle");
+  }
+}
+
+function openSyncModal() {
+  renderSyncModal();
+  el.syncOverlay.classList.remove("hidden");
+}
+
+function closeSyncModal() {
+  el.syncOverlay.classList.add("hidden");
+}
+
+async function connectSync() {
+  const owner = el.syncOwner.value.trim();
+  const repo = el.syncRepo.value.trim();
+  const branch = el.syncBranch.value.trim() || "main";
+  const token = el.syncToken.value.trim();
+  if (!owner || !repo || !token) {
+    toast("Renseigne propriétaire, repo et token");
+    return;
+  }
+  // Vérifie l'accès avant d'enregistrer.
+  setSyncStatus("sync");
+  try {
+    const store = new GitHubStore(owner, repo, branch, token);
+    await store.getFile(DATA_PATH); // null si absent : accès OK quand même
+    saveSyncConfig({ owner, repo, branch, token });
+    el.syncToken.value = "";
+    renderSyncModal();
+    toast("Repo connecté");
+    await syncNow(); // première synchro
+    renderSyncModal();
+  } catch (e) {
+    setSyncStatus("error", null, e.message);
+    toast("Connexion refusée");
+  }
+}
+
+function disconnectSync() {
+  clearSyncConfig();
+  renderSyncModal();
+  setSyncStatus("idle");
+  toast("Synchro déconnectée");
+}
+
 /* --------------------------- Init --------------------------- */
 
 render();
+
+if (getSyncConfig()) {
+  setSyncStatus("idle", Number(localStorage.getItem(STORAGE_LAST_SYNC)) || 0);
+  syncNow({ silent: true });
+}
+window.addEventListener("online", () => scheduleSync());
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

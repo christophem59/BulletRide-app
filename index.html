@@ -19,6 +19,7 @@
 <header class="topbar">
   <h1>🏍️ BulletRide</h1>
   <div class="topbar-actions">
+    <button id="btn-sync" class="icon-btn" title="Synchronisation">☁️</button>
     <button id="btn-settings" class="icon-btn" title="Catégories">🎨</button>
   </div>
 </header>
@@ -76,6 +77,56 @@
     <div class="modal-actions">
       <button id="btn-reset-cats" class="btn-ghost">Réinitialiser</button>
       <button id="btn-save-cats" class="btn-primary">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale de synchronisation -->
+<div id="sync-overlay" class="overlay hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Synchronisation</h2>
+      <button id="btn-close-sync" class="icon-btn" title="Fermer">✕</button>
+    </div>
+
+    <p id="sync-status" class="sync-status"></p>
+
+    <!-- Non connecté : formulaire -->
+    <div id="sync-form">
+      <p class="hint">
+        Sauvegarde et synchronise tes données entre appareils via un repo GitHub
+        <strong>privé</strong>. Le token reste uniquement sur cet appareil.
+      </p>
+      <label>Propriétaire (compte GitHub)
+        <input id="sync-owner" type="text" placeholder="ex : christophem59" autocapitalize="off" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>Repo privé
+        <input id="sync-repo" type="text" placeholder="ex : bulletride-data" autocapitalize="off" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>Branche
+        <input id="sync-branch" type="text" value="main" autocapitalize="off" autocomplete="off" spellcheck="false" />
+      </label>
+      <label>Token d'accès personnel (PAT)
+        <input id="sync-token" type="password" placeholder="github_pat_…" autocapitalize="off" autocomplete="off" spellcheck="false" />
+      </label>
+      <p class="hint">
+        Crée un token « fine-grained » sur
+        github.com/settings/personal-access-tokens, limité à ton repo privé,
+        avec la permission <strong>Contents : Read and write</strong>.
+        Le fichier <code>bulletride.json</code> sera créé automatiquement.
+      </p>
+      <div class="modal-actions modal-actions-end">
+        <button id="btn-sync-connect" class="btn-primary">Connecter &amp; synchroniser</button>
+      </div>
+    </div>
+
+    <!-- Connecté : état + actions -->
+    <div id="sync-connected" class="hidden">
+      <p class="hint">Connecté à <strong id="sync-repo-label">—</strong>. Tes modifications sont sauvegardées automatiquement.</p>
+      <div class="modal-actions">
+        <button id="btn-sync-disconnect" class="btn-ghost">Déconnecter</button>
+        <button id="btn-sync-now" class="btn-primary">Synchroniser maintenant</button>
+      </div>
     </div>
   </div>
 </div>
