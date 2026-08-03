@@ -14,7 +14,6 @@ Issus de la veille (voir « Fait récemment »).
 
 - **km par jour (optionnel)** : champ km dans la modale → stat « X km cette année ».
 - **Vue mensuelle détaillée** : tap sur un mois → grand mois avec notes/km lisibles, en complément de la vue annuelle.
-- **Icône/emoji par catégorie** : un emoji par catégorie, affiché dans la pastille.
 
 ### 2. Design
 
@@ -34,6 +33,7 @@ Rien actuellement.
 - Météo auto du jour : nécessite réseau + API + géoloc, casse le côté 100 % local.
 - Entretien moto (rappels vidange/pneus/chaîne) : plutôt un module à part.
 - GPS auto / itinéraires sur carte, suivi carburant/MPG, aspect communautaire : en ferait une autre app.
+- Icône/emoji par catégorie : maquette faite, écartée pour le moment (ne convainc pas visuellement).
 
 ## Fait récemment
 
