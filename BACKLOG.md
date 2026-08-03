@@ -24,8 +24,7 @@ Issus de la veille (voir « Fait récemment »).
 
 ### 3. Infrastructure & données
 
-- **Déploiement via repo Git** : créer le repo GitHub + mise en ligne (ex. GitHub Pages).
-- **Synchro des données** : pouvoir utiliser l'app sur mobile et sur PC avec les mêmes données (à l'image d'Omnivore).
+- **Synchro des données** : pouvoir utiliser l'app sur mobile et sur PC avec les mêmes données (à l'image d'Omnivore). C'est aussi ce qui fera office de sauvegarde des sorties (aujourd'hui uniquement en `localStorage`, par appareil).
 
 ## Hors scope pour l'instant
 
@@ -38,6 +37,7 @@ Issus de la veille (voir « Fait récemment »).
 
 ## Fait récemment
 
+- Déploiement GitHub Pages : repo public https://github.com/christophem59/BulletRide, app en ligne sur https://christophem59.github.io/BulletRide/. PWA installable + offline confirmée sur l'origine déployée (service worker actif, tous les assets servis, chemins relatifs OK sous le sous-dossier). Commits sur identité GitHub noreply (aucune info perso publiée) ; les données de sorties restent locales (jamais dans le repo).
 - Stats enrichies : sous les compteurs total + par catégorie, un encart affiche « Meilleur mois » (mois avec le plus de sorties), « Jour préféré » (jour de semaine le plus fréquent) et un mini-graphe des sorties mois par mois (12 barres). Masqué tant qu'il n'y a aucune sortie sur l'année affichée.
 - Note par jour : champ note optionnel dans la modale d'un jour (destination, avec qui, ressenti). Les jours annotés gardent la couleur de leur catégorie et portent une barre blanche en bas de la case ; une note peut exister sans catégorie (jour non « moto »), et vider note + catégorie supprime l'entrée. Modèle de données passé de `"<catId>"` à `{ cat, note, km }` avec migration automatique des anciennes données.
 - Bouton « J'ai roulé aujourd'hui » : gros bouton sous le sélecteur d'année qui ouvre directement la modale du jour (bascule d'abord sur l'année courante si besoin).
