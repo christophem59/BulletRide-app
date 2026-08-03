@@ -14,11 +14,11 @@ Rien actuellement.
 
 ### 2. Design
 
-Rien actuellement.
+- **État vide des mois** : retirer l'illustration moto de l'état vide « Aucune sortie ce mois-ci » — redondante avec la moto en filigrane de fond (garder juste le texte).
 
 ### 3. Infrastructure & données
 
-Rien actuellement.
+- **Partage à des amis** (si un jour ça les intéresse) : l'app est déjà partageable via son URL publique (chacun son journal, données isolées — pas de vue commune sans backend). Christophe créerait lui-même les repos privés + PAT pour ses amis (ils n'auraient qu'à coller les infos dans la modale ☁️, aucune manip GitHub de leur côté). À prévoir pour faciliter : écran d'aide intégré « installer + activer la synchro », et export/import JSON (sauvegarde simple sans GitHub, pour les non-techos).
 
 ## Hors scope pour l'instant
 
