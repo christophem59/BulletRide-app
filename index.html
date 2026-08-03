@@ -29,7 +29,12 @@
   <button id="btn-next-year" class="nav-btn" title="Année suivante">›</button>
 </nav>
 
+<div class="today-cta">
+  <button id="btn-today" class="btn-today">🏍️ J'ai roulé aujourd'hui</button>
+</div>
+
 <section id="stats" class="stats"></section>
+<section id="stats-extra" class="stats-extra"></section>
 
 <main id="year-grid" class="year-grid"></main>
 
@@ -48,6 +53,13 @@
     </div>
     <p class="hint">Choisis le type de sortie pour ce jour.</p>
     <div id="day-choices" class="day-choices"></div>
+    <label class="note-field">
+      <span class="note-label">Note (optionnel)</span>
+      <textarea id="day-note" rows="3" maxlength="280" placeholder="Destination, avec qui, ressenti…"></textarea>
+    </label>
+    <div class="modal-actions modal-actions-end">
+      <button id="btn-day-done" class="btn-primary">Terminé</button>
+    </div>
   </div>
 </div>
 

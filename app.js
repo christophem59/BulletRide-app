@@ -5,7 +5,7 @@
  * Vanilla JS PWA, données stockées localement (localStorage).
  * ------------------------------------------------------------------ */
 
-const STORAGE_DAYS = "bulletride:days";       // { "YYYY-MM-DD": "<catId>" }
+const STORAGE_DAYS = "bulletride:days";       // { "YYYY-MM-DD": { cat, note, km } }
 const STORAGE_CATS = "bulletride:categories"; // [ { id, label, color } ]
 
 const DEFAULT_CATEGORIES = [
@@ -30,15 +30,70 @@ const state = {
 };
 
 function loadDays() {
+  let raw;
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_DAYS)) || {};
+    raw = JSON.parse(localStorage.getItem(STORAGE_DAYS)) || {};
   } catch {
     return {};
   }
+  // Migration : ancien format où la valeur était directement l'id de catégorie
+  // (une chaîne). On passe à un objet { cat, note, km }.
+  const migrated = {};
+  for (const [key, val] of Object.entries(raw)) {
+    if (typeof val === "string") {
+      migrated[key] = { cat: val };
+    } else if (val && typeof val === "object") {
+      migrated[key] = val;
+    }
+  }
+  return migrated;
 }
 
 function saveDays() {
   localStorage.setItem(STORAGE_DAYS, JSON.stringify(state.days));
+}
+
+/** Entrée normalisée d'un jour (ou null si rien). */
+function dayEntry(key) {
+  return state.days[key] || null;
+}
+
+/** Id de catégorie d'un jour (ou null). */
+function dayCat(key) {
+  const e = state.days[key];
+  return e ? e.cat || null : null;
+}
+
+/** Vrai si le jour porte une note non vide. */
+function dayHasNote(key) {
+  const e = state.days[key];
+  return !!(e && e.note && e.note.trim());
+}
+
+/**
+ * Écrit une entrée de jour et nettoie si elle devient vide (pas de catégorie,
+ * pas de note). Renvoie l'entrée finale (ou null si supprimée).
+ */
+function writeDay(key, { cat, note } = {}) {
+  const e = { ...(state.days[key] || {}) };
+  if (cat !== undefined) {
+    if (cat) e.cat = cat;
+    else delete e.cat;
+  }
+  if (note !== undefined) {
+    const n = (note || "").trim();
+    if (n) e.note = n;
+    else delete e.note;
+  }
+  const empty = !e.cat && !e.note && e.km === undefined;
+  if (empty) {
+    delete state.days[key];
+    saveDays();
+    return null;
+  }
+  state.days[key] = e;
+  saveDays();
+  return e;
 }
 
 function loadCategories() {
@@ -113,6 +168,10 @@ const el = {
   dayOverlay: document.getElementById("day-overlay"),
   closeDay: document.getElementById("btn-close-day"),
   dayChoices: document.getElementById("day-choices"),
+  dayNote: document.getElementById("day-note"),
+  dayDone: document.getElementById("btn-day-done"),
+  statsExtra: document.getElementById("stats-extra"),
+  todayBtn: document.getElementById("btn-today"),
 };
 
 /* --------------------------- Rendu --------------------------- */
@@ -170,11 +229,15 @@ function renderGrid() {
       num.textContent = d;
       btn.appendChild(num);
 
-      const cat = categoryById(state.days[key]);
+      const cat = categoryById(dayCat(key));
       if (cat) {
         btn.classList.add("filled");
         btn.style.background = cat.color;
         btn.title = cat.label;
+      }
+      if (dayHasNote(key)) {
+        btn.classList.add("has-note");
+        btn.title = (cat ? cat.label + " — " : "") + "note";
       }
       if (key === today) btn.classList.add("today");
       if (key > today) btn.classList.add("future");
@@ -190,16 +253,24 @@ function renderGrid() {
 }
 
 function renderStats() {
-  const counts = {};
+  const counts = {};             // par catégorie
+  const byMonth = new Array(12).fill(0);
+  const byWeekday = new Array(7).fill(0);
   let total = 0;
   const prefix = `${state.year}-`;
-  for (const [key, catId] of Object.entries(state.days)) {
+
+  for (const [key, entry] of Object.entries(state.days)) {
     if (!key.startsWith(prefix)) continue;
-    if (!categoryById(catId)) continue;
+    const catId = entry && entry.cat;
+    if (!categoryById(catId)) continue; // seuls les jours "de moto" comptent
     counts[catId] = (counts[catId] || 0) + 1;
     total++;
+    const [y, m, d] = key.split("-").map(Number);
+    byMonth[m - 1]++;
+    byWeekday[weekdayMondayFirst(y, m - 1, d)]++;
   }
 
+  /* --- Chips : total + par catégorie --- */
   const frag = document.createDocumentFragment();
 
   const totalChip = document.createElement("div");
@@ -224,6 +295,62 @@ function renderStats() {
   }
 
   el.stats.replaceChildren(frag);
+  renderStatsExtra({ total, byMonth, byWeekday });
+}
+
+const WEEKDAYS_FULL = [
+  "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche",
+];
+
+function renderStatsExtra({ total, byMonth, byWeekday }) {
+  if (total === 0) {
+    el.statsExtra.replaceChildren();
+    return;
+  }
+
+  const maxMonth = Math.max(...byMonth);
+  const bestMonthIdx = byMonth.indexOf(maxMonth);
+  const bestWeekdayIdx = byWeekday.indexOf(Math.max(...byWeekday));
+
+  const wrap = document.createElement("div");
+  wrap.className = "stats-extra-inner";
+
+  // Résumés textuels
+  const summary = document.createElement("div");
+  summary.className = "stats-summary";
+  const best = document.createElement("span");
+  best.innerHTML = `Meilleur mois : <strong>${MONTHS[bestMonthIdx]}</strong> (${maxMonth})`;
+  const fav = document.createElement("span");
+  fav.innerHTML = `Jour préféré : <strong>${WEEKDAYS_FULL[bestWeekdayIdx]}</strong>`;
+  summary.append(best, fav);
+  wrap.appendChild(summary);
+
+  // Mini graphe par mois
+  const chart = document.createElement("div");
+  chart.className = "month-chart";
+  for (let m = 0; m < 12; m++) {
+    const col = document.createElement("div");
+    col.className = "mc-col";
+    col.title = `${MONTHS[m]} : ${byMonth[m]}`;
+
+    const barWrap = document.createElement("div");
+    barWrap.className = "mc-bar-wrap";
+    const bar = document.createElement("div");
+    bar.className = "mc-bar";
+    bar.style.height = maxMonth ? `${Math.round((byMonth[m] / maxMonth) * 100)}%` : "0%";
+    if (byMonth[m] === 0) bar.classList.add("empty");
+    barWrap.appendChild(bar);
+
+    const lbl = document.createElement("span");
+    lbl.className = "mc-label";
+    lbl.textContent = MONTHS[m].charAt(0).toUpperCase();
+
+    col.append(barWrap, lbl);
+    chart.appendChild(col);
+  }
+  wrap.appendChild(chart);
+
+  el.statsExtra.replaceChildren(wrap);
 }
 
 function renderLegend() {
@@ -243,32 +370,38 @@ function renderLegend() {
 
 /* --------------------------- Interaction jour --------------------------- */
 
-const WEEKDAYS_LONG = [
-  "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche",
-];
-
 let selectedDayKey = null;
 
 function formatDayTitle(key) {
   const [y, m, d] = key.split("-").map(Number);
   const wd = weekdayMondayFirst(y, m - 1, d);
-  return `${WEEKDAYS_LONG[wd]} ${d} ${MONTHS[m - 1]} ${y}`;
+  return `${WEEKDAYS_FULL[wd]} ${d} ${MONTHS[m - 1]} ${y}`;
 }
 
 function openDayModal(key) {
   selectedDayKey = key;
   document.getElementById("day-modal-title").textContent = formatDayTitle(key);
   renderDayChoices(key);
+  const entry = dayEntry(key);
+  el.dayNote.value = (entry && entry.note) || "";
   el.dayOverlay.classList.remove("hidden");
 }
 
+// Enregistre la note saisie pour le jour en cours (sans fermer).
+function commitNote() {
+  if (!selectedDayKey) return;
+  writeDay(selectedDayKey, { note: el.dayNote.value });
+  updateDayCell(selectedDayKey);
+}
+
 function closeDayModal() {
+  commitNote();
   el.dayOverlay.classList.add("hidden");
   selectedDayKey = null;
 }
 
 function renderDayChoices(key) {
-  const current = state.days[key] || null;
+  const current = dayCat(key);
   const frag = document.createDocumentFragment();
 
   for (const cat of state.categories) {
@@ -312,24 +445,21 @@ function renderDayChoices(key) {
   el.dayChoices.replaceChildren(frag);
 }
 
+// Sélectionne une catégorie (ou l'efface). Ne ferme pas : on peut ensuite
+// ajouter une note. La saisie reste rapide grâce au bouton « Terminé ».
 function chooseCategory(catId) {
   if (!selectedDayKey) return;
   const key = selectedDayKey;
-  if (catId) {
-    state.days[key] = catId;
-  } else {
-    delete state.days[key];
-  }
-  saveDays();
+  writeDay(key, { cat: catId });
   updateDayCell(key);
   renderStats();
-  closeDayModal();
+  renderDayChoices(key); // rafraîchit la sélection cochée
 }
 
 function updateDayCell(key) {
   const btn = el.grid.querySelector(`.day[data-key="${key}"]`);
   if (!btn) return;
-  const cat = categoryById(state.days[key]);
+  const cat = categoryById(dayCat(key));
   if (cat) {
     btn.classList.add("filled");
     btn.style.background = cat.color;
@@ -341,6 +471,7 @@ function updateDayCell(key) {
     btn.style.color = "";
     btn.removeAttribute("title");
   }
+  btn.classList.toggle("has-note", dayHasNote(key));
 }
 
 el.grid.addEventListener("click", (e) => {
@@ -356,8 +487,21 @@ el.dayChoices.addEventListener("click", (e) => {
 });
 
 el.closeDay.addEventListener("click", closeDayModal);
+el.dayDone.addEventListener("click", closeDayModal);
 el.dayOverlay.addEventListener("click", (e) => {
   if (e.target === el.dayOverlay) closeDayModal();
+});
+
+// Bouton « J'ai roulé aujourd'hui » : bascule sur l'année courante si besoin,
+// puis ouvre la modale du jour.
+el.todayBtn.addEventListener("click", () => {
+  const key = todayKey();
+  const y = Number(key.slice(0, 4));
+  if (state.year !== y) {
+    state.year = y;
+    render();
+  }
+  openDayModal(key);
 });
 
 // Échap ferme la modale ouverte.
@@ -493,11 +637,13 @@ function saveCatsFromEditor() {
   state.categories = result;
   saveCategories();
 
-  // Nettoie les jours dont la catégorie n'existe plus.
+  // Nettoie la catégorie des jours dont elle n'existe plus (on garde la note
+  // s'il y en a une ; le jour est supprimé s'il devient vide).
   let removed = 0;
-  for (const [key, catId] of Object.entries(state.days)) {
-    if (!usedIds.includes(catId)) {
-      delete state.days[key];
+  for (const [key, entry] of Object.entries(state.days)) {
+    if (entry.cat && !usedIds.includes(entry.cat)) {
+      delete entry.cat;
+      if (!entry.note && entry.km === undefined) delete state.days[key];
       removed++;
     }
   }

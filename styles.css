@@ -81,6 +81,20 @@ body {
 .nav-btn:active { transform: scale(0.94); }
 .year-label { font-size: 1.6rem; font-weight: 700; min-width: 4ch; text-align: center; }
 
+/* Bouton "aujourd'hui" */
+.today-cta { display: flex; justify-content: center; padding: 6px 16px 2px; }
+.btn-today {
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+  border: none;
+  border-radius: 999px;
+  padding: 11px 20px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.btn-today:active { transform: scale(0.97); }
+
 /* Stats */
 .stats {
   display: flex;
@@ -102,6 +116,52 @@ body {
 .stat-chip .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .stat-chip strong { font-weight: 700; }
 .stat-chip .stat-total { color: var(--accent); }
+
+/* Stats enrichies */
+.stats-extra { padding: 2px 16px 4px; }
+.stats-extra-inner {
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.stats-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.stats-summary strong { color: var(--text); text-transform: capitalize; }
+.month-chart {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 5px;
+  align-items: end;
+  height: 70px;
+}
+.mc-col { display: flex; flex-direction: column; align-items: center; height: 100%; }
+.mc-bar-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+.mc-bar {
+  width: 100%;
+  max-width: 16px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+}
+.mc-bar.empty { background: var(--empty-cell); }
+.mc-label { font-size: 0.62rem; color: var(--text-dim); margin-top: 4px; }
 
 /* Year grid of months */
 .year-grid {
@@ -162,6 +222,20 @@ body {
   pointer-events: none;
 }
 .day.filled .num { color: rgba(0, 0, 0, 0.6); }
+
+/* Indicateur "note" : petit point en haut à droite */
+.day.has-note::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
 
 /* Legend */
 .legend {
@@ -305,6 +379,23 @@ body {
 .choice-clear .swatch {
   background: repeating-linear-gradient(45deg, #3a3a3a, #3a3a3a 4px, #2a2a2a 4px, #2a2a2a 8px);
 }
+
+/* Champ note dans la modale jour */
+.note-field { display: block; margin-top: 16px; }
+.note-label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; }
+.note-field textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 68px;
+}
+.modal-actions-end { justify-content: flex-end; }
 
 .btn-secondary, .btn-primary, .btn-ghost {
   border-radius: 10px;
