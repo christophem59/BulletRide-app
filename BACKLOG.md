@@ -34,6 +34,7 @@ Rien actuellement.
 - Entretien moto (rappels vidange/pneus/chaîne) : plutôt un module à part.
 - GPS auto / itinéraires sur carte, suivi carburant/MPG, aspect communautaire : en ferait une autre app.
 - Icône/emoji par catégorie : maquette faite, écartée pour le moment (ne convainc pas visuellement).
+- Intégration app 68° (GPS moto) : étudiée, abandonnée. 68° est un planificateur/GPS, il n'enregistre pas les sorties effectuées (pas de temps de roulage ni km réels) et n'a pas d'API publique → rien à récupérer. BulletRide étant une PWA statique sans backend, la seule intégration possible aurait été un simple lien « ouvrir 68° » (aucune donnée en retour), jugé trop peu utile. Pour récupérer km/durée automatiquement il faudrait plutôt une app de tracking (Detecht/REVER/Calimoto) via import GPX horodaté — piste app-agnostique si le besoin revient.
 
 ## Fait récemment
 
