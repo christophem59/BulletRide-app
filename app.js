@@ -37,6 +37,8 @@ const state = {
   categories: loadCategories(),
   tombstones: loadTombstones(),
   catsU: loadCatsU(),
+  view: "year",                     // "year" | "month"
+  viewMonth: new Date().getMonth(), // mois affiché en vue détaillée (0-11)
 };
 
 function loadTombstones() {
@@ -202,6 +204,15 @@ const el = {
   stats: document.getElementById("stats"),
   grid: document.getElementById("year-grid"),
   legend: document.getElementById("legend"),
+  yearSections: [...document.querySelectorAll(".year-only")],
+  monthView: document.getElementById("month-view"),
+  mvBack: document.getElementById("mv-back"),
+  mvPrev: document.getElementById("mv-prev"),
+  mvNext: document.getElementById("mv-next"),
+  mvTitle: document.getElementById("mv-title"),
+  mvStats: document.getElementById("mv-stats"),
+  mvGrid: document.getElementById("mv-grid"),
+  mvList: document.getElementById("mv-list"),
   toast: document.getElementById("toast"),
   settingsBtn: document.getElementById("btn-settings"),
   overlay: document.getElementById("settings-overlay"),
@@ -239,10 +250,18 @@ const el = {
 /* --------------------------- Rendu --------------------------- */
 
 function render() {
-  el.yearLabel.textContent = state.year;
-  renderGrid();
-  renderStats();
-  renderLegend();
+  const monthView = state.view === "month";
+  el.yearSections.forEach((s) => s.classList.toggle("hidden", monthView));
+  el.monthView.classList.toggle("hidden", !monthView);
+
+  if (monthView) {
+    renderMonthView();
+  } else {
+    el.yearLabel.textContent = state.year;
+    renderGrid();
+    renderStats();
+    renderLegend();
+  }
 }
 
 function renderGrid() {
@@ -253,9 +272,11 @@ function renderGrid() {
     const card = document.createElement("div");
     card.className = "month-card";
 
-    const title = document.createElement("div");
+    const title = document.createElement("button");
+    title.type = "button";
     title.className = "month-title";
-    title.textContent = MONTHS[m];
+    title.dataset.month = m;
+    title.innerHTML = `<span>${MONTHS[m]}</span><span class="month-chevron">›</span>`;
     card.appendChild(title);
 
     const wd = document.createElement("div");
@@ -522,8 +543,12 @@ function commitDayAndClose() {
       km: el.dayKm.value,
       min: readDurationMinutes(),
     });
-    updateDayCell(selectedDayKey);
-    renderStats();
+    if (state.view === "month") {
+      renderMonthView();
+    } else {
+      updateDayCell(selectedDayKey);
+      renderStats();
+    }
   }
   el.dayOverlay.classList.add("hidden");
   selectedDayKey = null;
@@ -617,9 +642,173 @@ function updateDayCell(key) {
 }
 
 el.grid.addEventListener("click", (e) => {
+  const monthBtn = e.target.closest(".month-title");
+  if (monthBtn) {
+    openMonth(Number(monthBtn.dataset.month));
+    return;
+  }
   const btn = e.target.closest(".day");
   if (!btn || btn.classList.contains("blank") || btn.classList.contains("future")) return;
   openDayModal(btn.dataset.key);
+});
+
+/* --------------------------- Vue mensuelle détaillée --------------------------- */
+
+const WEEKDAYS_SHORT = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
+
+function openMonth(m) {
+  state.view = "month";
+  state.viewMonth = m;
+  render();
+  window.scrollTo(0, 0);
+}
+
+function backToYear() {
+  state.view = "year";
+  render();
+}
+
+function stepMonth(delta) {
+  let m = state.viewMonth + delta;
+  if (m < 0) { m = 11; state.year--; }
+  else if (m > 11) { m = 0; state.year++; }
+  state.viewMonth = m;
+  render();
+}
+
+function renderMonthView() {
+  const m = state.viewMonth;
+  const y = state.year;
+  el.mvTitle.textContent = `${MONTHS[m].charAt(0).toUpperCase() + MONTHS[m].slice(1)} ${y}`;
+
+  // --- Entrées du mois (triées par jour) ---
+  const prefix = `${y}-${pad(m + 1)}-`;
+  const entries = Object.entries(state.days)
+    .filter(([k]) => k.startsWith(prefix))
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  let count = 0, totalKm = 0, totalMin = 0;
+  for (const [, e] of entries) {
+    if (!categoryById(e.cat)) continue;
+    count++;
+    if (e.km > 0) totalKm += e.km;
+    if (e.min > 0) totalMin += e.min;
+  }
+
+  // --- Stats du mois ---
+  const sf = document.createDocumentFragment();
+  const c1 = document.createElement("div");
+  c1.className = "stat-chip";
+  c1.innerHTML = `<span class="stat-total"><strong>${count}</strong></span> sortie${count > 1 ? "s" : ""}`;
+  sf.appendChild(c1);
+  if (totalKm > 0) {
+    const c = document.createElement("div");
+    c.className = "stat-chip";
+    c.innerHTML = `<strong>${Math.round(totalKm).toLocaleString("fr-FR")}</strong> km`;
+    sf.appendChild(c);
+  }
+  if (totalMin > 0) {
+    const c = document.createElement("div");
+    c.className = "stat-chip";
+    c.innerHTML = `<strong>${formatDuration(totalMin)}</strong> de route`;
+    sf.appendChild(c);
+  }
+  el.mvStats.replaceChildren(sf);
+
+  // --- Grand calendrier (couleur + note, pas de km) ---
+  const today = todayKey();
+  const gf = document.createDocumentFragment();
+  const offset = weekdayMondayFirst(y, m, 1);
+  for (let i = 0; i < offset; i++) {
+    const b = document.createElement("div");
+    b.className = "day blank";
+    gf.appendChild(b);
+  }
+  const total = daysInMonth(y, m);
+  for (let d = 1; d <= total; d++) {
+    const key = dateKey(y, m, d);
+    const btn = document.createElement("button");
+    btn.className = "day";
+    btn.type = "button";
+    btn.dataset.key = key;
+    const num = document.createElement("span");
+    num.className = "num";
+    num.textContent = d;
+    btn.appendChild(num);
+    const cat = categoryById(dayCat(key));
+    if (cat) {
+      btn.classList.add("filled");
+      btn.style.background = cat.color;
+      btn.style.color = readableInk(cat.color);
+      btn.title = cat.label;
+    }
+    if (dayHasNote(key)) btn.classList.add("has-note");
+    if (key === today) btn.classList.add("today");
+    if (key > today) btn.classList.add("future");
+    gf.appendChild(btn);
+  }
+  el.mvGrid.replaceChildren(gf);
+
+  // --- Liste des sorties du mois ---
+  const lf = document.createDocumentFragment();
+  const visible = entries.filter(([, e]) => e.cat || e.note || e.km > 0 || e.min > 0);
+  if (visible.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "mv-empty";
+    empty.textContent = "Aucune sortie ce mois-ci.";
+    lf.appendChild(empty);
+  }
+  for (const [key, e] of visible) {
+    const d = Number(key.slice(8, 10));
+    const wd = weekdayMondayFirst(y, m, d);
+    const cat = categoryById(e.cat);
+
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "mv-row";
+    row.dataset.key = key;
+
+    const dot = document.createElement("span");
+    dot.className = "mv-dot";
+    dot.style.background = cat ? cat.color : "#555";
+
+    const mid = document.createElement("div");
+    mid.className = "mv-mid";
+    const head = document.createElement("div");
+    head.className = "mv-row-head";
+    head.innerHTML = `<strong>${WEEKDAYS_SHORT[wd]} ${d}</strong> · ${cat ? cat.label : "Note"}`;
+    mid.appendChild(head);
+    if (e.note) {
+      const note = document.createElement("div");
+      note.className = "mv-row-note";
+      note.textContent = e.note;
+      mid.appendChild(note);
+    }
+
+    const right = document.createElement("div");
+    right.className = "mv-row-metrics";
+    const bits = [];
+    if (e.km > 0) bits.push(`${e.km} km`);
+    if (e.min > 0) bits.push(formatDuration(e.min));
+    right.innerHTML = bits.length ? bits.join("<br>") : "—";
+
+    row.append(dot, mid, right);
+    lf.appendChild(row);
+  }
+  el.mvList.replaceChildren(lf);
+}
+
+el.mvBack.addEventListener("click", backToYear);
+el.mvPrev.addEventListener("click", () => stepMonth(-1));
+el.mvNext.addEventListener("click", () => stepMonth(1));
+el.mvGrid.addEventListener("click", (e) => {
+  const btn = e.target.closest(".day");
+  if (!btn || btn.classList.contains("blank") || btn.classList.contains("future")) return;
+  openDayModal(btn.dataset.key);
+});
+el.mvList.addEventListener("click", (e) => {
+  const row = e.target.closest(".mv-row");
+  if (row) openDayModal(row.dataset.key);
 });
 
 el.dayChoices.addEventListener("click", (e) => {

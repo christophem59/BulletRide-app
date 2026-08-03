@@ -10,9 +10,7 @@ Rien actuellement.
 
 ### 1. Interaction & fonctionnalités
 
-Issus de la veille (voir « Fait récemment »).
-
-- **Vue mensuelle détaillée** : tap sur un mois → grand mois avec notes/km lisibles, en complément de la vue annuelle.
+Rien actuellement.
 
 ### 2. Design
 
@@ -37,6 +35,7 @@ Rien actuellement.
 
 ## Fait récemment
 
+- Vue mensuelle détaillée : tap sur le titre d'un mois (vue annuelle) ouvre un écran dédié — en-tête « ‹ Année » + navigation mois ‹ › (avec bascule d'année), récap du mois (sorties / km / temps), grand calendrier (couleur + barre note, sans km) et liste « Sorties du mois » avec type, km, temps et note lisibles. Un tap sur une case ou une ligne ouvre la modale d'édition ; l'écran se rafraîchit après édition.
 - km + temps de route par jour : deux champs (distance en km, temps en h/min) dans la modale d'un jour, avec totaux annuels dans les stats (« X km », « X h de route »). Valeurs par défaut par catégorie (défauts km/temps dans l'éditeur 🎨) : choisir la catégorie pré-remplit les champs du jour s'ils sont vides (jamais d'écrasement d'une saisie) — pensé pour le trajet travail toujours identique. Modèle de jour : `{ cat, note, km, min, u }` ; catégorie : `{ id, label, color, defKm, defMin }`. Synchronisés comme le reste.
 - Synchro des données (GitHub) : le `localStorage` reste la copie de travail (offline-first) et un fichier privé `bulletride.json` dans un repo GitHub choisi sert de sauvegarde + synchro multi-appareils, via l'API Contents avec un PAT stocké uniquement sur l'appareil (pattern Omnivore). Pull+fusion au chargement, push débounced à chaque modif, resynchro au retour en ligne. Fusion sans perte jour par jour : horodatage `u` par jour + tombstones pour les suppressions (le plus récent gagne) ; catégories en dernier-écrit-gagne via `catsU` ; retry auto sur conflit 409/422. Modale ☁️ pour connecter le repo/token (repo privé dédié — le repo de code BulletRide-app étant public). Logique de fusion couverte par des tests unitaires ; round-trip GitHub réel à valider avec un vrai repo privé + PAT.
 - Déploiement GitHub Pages : repo public https://github.com/christophem59/BulletRide-app, app en ligne sur https://christophem59.github.io/BulletRide-app/. PWA installable + offline confirmée sur l'origine déployée (service worker actif, tous les assets servis, chemins relatifs OK sous le sous-dossier). Commits sur identité GitHub noreply (aucune info perso publiée) ; les données de sorties restent locales (jamais dans le repo).

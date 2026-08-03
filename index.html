@@ -24,22 +24,42 @@
   </div>
 </header>
 
-<nav class="yearbar">
+<nav class="yearbar year-only">
   <button id="btn-prev-year" class="nav-btn" title="Année précédente">‹</button>
   <span id="year-label" class="year-label">2026</span>
   <button id="btn-next-year" class="nav-btn" title="Année suivante">›</button>
 </nav>
 
-<div class="today-cta">
+<div class="today-cta year-only">
   <button id="btn-today" class="btn-today">🏍️ J'ai roulé aujourd'hui</button>
 </div>
 
-<section id="stats" class="stats"></section>
-<section id="stats-extra" class="stats-extra"></section>
+<section id="stats" class="stats year-only"></section>
+<section id="stats-extra" class="stats-extra year-only"></section>
 
-<main id="year-grid" class="year-grid"></main>
+<main id="year-grid" class="year-grid year-only"></main>
 
-<section id="legend" class="legend"></section>
+<section id="legend" class="legend year-only"></section>
+
+<!-- Vue mensuelle détaillée -->
+<main id="month-view" class="month-view hidden">
+  <div class="mv-head">
+    <button id="mv-back" class="mv-back">‹ Année</button>
+    <div class="mv-nav">
+      <button id="mv-prev" class="nav-btn" title="Mois précédent">‹</button>
+      <span id="mv-title" class="mv-title">Mois</span>
+      <button id="mv-next" class="nav-btn" title="Mois suivant">›</button>
+    </div>
+    <span class="mv-spacer"></span>
+  </div>
+  <section id="mv-stats" class="stats"></section>
+  <div class="mv-wds">
+    <span class="wd">L</span><span class="wd">M</span><span class="wd">M</span><span class="wd">J</span><span class="wd">V</span><span class="wd">S</span><span class="wd">D</span>
+  </div>
+  <div id="mv-grid" class="mv-grid"></div>
+  <h3 class="mv-list-title">Sorties du mois</h3>
+  <div id="mv-list" class="mv-list"></div>
+</main>
 
 <footer class="app-footer">
   <span>Touche un jour pour choisir une catégorie • données stockées sur ton appareil</span>

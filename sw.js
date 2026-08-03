@@ -1,6 +1,6 @@
 // Incrémenter ce numéro à chaque changement du code de l'app force une
 // invalidation propre de l'ancien cache (voir activate ci-dessous).
-const CACHE_NAME = "bulletride-shell-v8";
+const CACHE_NAME = "bulletride-shell-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
